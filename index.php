@@ -49,7 +49,7 @@ if( 0 != filesize($file_name))
 }
 
       $moves_str .= "$next_move\n";
-      $frotz = `echo "$moves_str" | dfrotz -s 1 /var/local/ZORKI.DAT`;
+      $frotz = `echo "$moves_str" | dfrotz -s 1 ZORK3.DAT`;
 
 $old_moveno = $moveno;
 $moveno = 0;
