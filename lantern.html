@@ -119,9 +119,15 @@ form {
   }
 
   updateViewportHeight();
-  window.addEventListener("resize", updateViewportHeight);
+  window.addEventListener("resize", () => {
+    updateViewportHeight();
+    scrollScreenToBottom();
+  });
   if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", updateViewportHeight);
+    window.visualViewport.addEventListener("resize", () => {
+      updateViewportHeight();
+      scrollScreenToBottom();
+    });
   }
 
   const api = path => new URL(path.replace(/^\//, ""), window.location.href).toString();
@@ -133,9 +139,18 @@ form {
     send.disabled = busy || !sessionId;
   }
 
+  function scrollScreenToBottom() {
+    requestAnimationFrame(() => {
+      screen.scrollTop = screen.scrollHeight;
+      requestAnimationFrame(() => {
+        screen.scrollTop = screen.scrollHeight;
+      });
+    });
+  }
+
   function showResult(result) {
     screen.textContent = result && result.stdout ? result.stdout : "(no dfrotz output)";
-    screen.scrollTop = screen.scrollHeight;
+    scrollScreenToBottom();
   }
 
   async function request(path, options = {}) {
@@ -182,7 +197,10 @@ form {
       status.textContent = "Could not start session.";
     } finally {
       setBusy(false);
-      if (sessionId) command.focus();
+      if (sessionId) {
+        command.focus();
+        scrollScreenToBottom();
+      }
     }
   }
 
@@ -207,6 +225,7 @@ form {
     } finally {
       setBusy(false);
       command.focus();
+      scrollScreenToBottom();
     }
   });
 
