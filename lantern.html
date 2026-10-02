@@ -83,7 +83,7 @@ button { cursor: pointer; }
   visibility: hidden;
 }
 button:disabled, input:disabled { opacity: .5; cursor: default; }
-#status { flex: 0 0 auto; margin: 0 0 8px; min-height: 1.4em; color: #9aae9a; }
+#status { display: none; }
 #gameStatus {
   flex: 0 0 auto;
   display: flex;
@@ -131,7 +131,6 @@ form {
   header { margin-bottom: 6px; }
   h1 { font-size: 18px; }
   select, button, input { padding: 8px 9px; }
-  #status { margin-bottom: 6px; font-size: 14px; }
   #gameStatus { padding: 5px 8px; font-size: 13px; }
   #screen { padding: 10px; margin-bottom: 8px; }
   .small { display: none; }
@@ -150,7 +149,7 @@ form {
     <button id="newGame" type="button">New game</button>
   </header>
 
-  <div id="status">Checking Lantern…</div>
+  <div id="status" aria-live="polite"></div>
   <div id="gameStatus" aria-live="polite">
     <span id="gameLocation">—</span>
     <span id="gameStats">Score: — · Moves: 0</span>
