@@ -96,3 +96,17 @@ story hash + seed + ordered moves
 ```
 
 That is enough to reproduce the run with the same game image and interpreter behavior. A later version can add player signatures, hash-chained moves, server attestations, milestones, and token claims without changing the basic record.
+
+
+## Chisel integration direction
+
+Lantern should keep game execution and session state separate from ledger signing.
+
+A Lantern session can be exported as a deterministic artifact containing the game identifier, story hash, seed, ordered move list, and any derived metadata needed to replay it. That artifact can then be handed to Chisel for signing, inscription, or publication to a supported ledger.
+
+Two signing paths are worth preserving:
+
+1. **Client-side Chisel export** — Lantern exports the artifact into Chisel, where the user's own identity/key signs and publishes it.
+2. **Optional server signer** — a separate Node.js service may run Chisel-compatible signing on the server for workflows that explicitly require a server identity or attestation.
+
+The normal Lantern server should not need a private blockchain key merely to host or replay games. Ledger publication should remain an explicit action rather than an automatic side effect of playing.
