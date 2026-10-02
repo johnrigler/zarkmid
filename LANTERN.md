@@ -45,6 +45,18 @@ Default address:
 http://127.0.0.1:7788
 ```
 
+Browser client:
+
+```
+http://127.0.0.1:7788/
+```
+
+With Apache reverse-proxying `/lantern/` to `127.0.0.1:7788/`:
+
+```
+https://rigler.org/lantern/
+```
+
 Health check:
 
 ```bash
