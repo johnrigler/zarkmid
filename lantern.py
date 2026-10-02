@@ -35,6 +35,7 @@ BASE_DIR = Path(__file__).resolve().parent
 GAME_DIR = Path(os.environ.get("LANTERN_GAME_DIR", BASE_DIR / "games")).resolve()
 DATA_DIR = Path(os.environ.get("LANTERN_DATA_DIR", BASE_DIR / "lantern-data")).resolve()
 SESSION_DIR = DATA_DIR / "sessions"
+FRONTEND_FILE = BASE_DIR / "lantern.html"
 DFROTZ = os.environ.get("LANTERN_DFROTZ", "dfrotz")
 
 GAME_FILES = {
