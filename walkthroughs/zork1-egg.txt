@@ -1,0 +1,19 @@
+# Zork I egg smoke test
+#
+# Start west of the white house, climb the tree, retrieve the
+# jewel-encrusted egg, return through the kitchen window, enter
+# the living room, and put the egg in the trophy case.
+
+N
+N
+CLIMB TREE
+GET EGG
+CLIMB DOWN
+S
+E
+OPEN WINDOW
+W
+W
+PUT EGG IN CASE
+LOOK
+INVENTORY
