@@ -7,6 +7,7 @@ No third-party Python packages are required.
 Endpoints:
   GET  /health
   POST /api/session
+  POST /api/session/import
   GET  /api/session/<session_id>
   POST /api/session/<session_id>/move
   POST /api/replay
@@ -295,6 +296,34 @@ def create_session(game: str, seed: int = DEFAULT_SEED) -> dict[str, Any]:
     return session
 
 
+def import_session(saved: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    if not isinstance(saved, dict):
+        raise LanternError("Saved game must be a JSON object.")
+
+    if saved.get("version") != "lantern.session.v1":
+        raise LanternError("Unsupported Lantern save format.")
+
+    game = str(saved.get("game", ""))
+    seed = int(saved.get("seed", DEFAULT_SEED))
+    moves = saved.get("moves", [])
+    if not isinstance(moves, list):
+        raise LanternError("Saved moves must be an array.")
+
+    cleaned = clean_moves(moves)
+    expected_hash = story_sha256(game)
+    saved_hash = saved.get("storySha256")
+    if saved_hash and saved_hash != expected_hash:
+        raise LanternError("Saved game story hash does not match this server.")
+
+    session = create_session(game, seed)
+    session["moves"] = cleaned
+    session["updatedAt"] = now_iso()
+    save_session(session)
+
+    result = add_status(run_game(game, cleaned, seed))
+    return session, result
+
+
 def add_move(session_id: str, command: str) -> tuple[dict[str, Any], dict[str, Any]]:
     session = load_session(session_id)
 
@@ -416,6 +445,12 @@ class LanternHandler(BaseHTTPRequestHandler):
                 session = create_session(game, seed)
                 initial = add_status(run_game(game, [], seed))
                 self.send_json(201, {"session": session, "result": initial})
+                return
+
+            if path == "/api/session/import":
+                saved = body.get("session", body)
+                session, result = import_session(saved)
+                self.send_json(201, {"session": session, "result": result})
                 return
 
             if path == "/api/replay":
