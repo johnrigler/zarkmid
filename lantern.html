@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lantern</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #0d0f0d;
+  color: #d8e2d8;
+  font: 16px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+main { max-width: 960px; margin: 0 auto; padding: 24px; }
+header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+h1 { font-size: 20px; margin: 0 auto 0 0; font-weight: 600; }
+select, button, input {
+  font: inherit;
+  color: inherit;
+  background: #171b17;
+  border: 1px solid #3b463b;
+  border-radius: 4px;
+  padding: 9px 10px;
+}
+button { cursor: pointer; }
+button:disabled, input:disabled { opacity: .5; cursor: default; }
+#status { margin: 0 0 10px; min-height: 1.4em; color: #9aae9a; }
+#screen {
+  min-height: 55vh;
+  max-height: 68vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #080a08;
+  border: 1px solid #2d352d;
+  padding: 16px;
+  margin: 0 0 12px;
+}
+form { display: flex; gap: 8px; }
+#command { flex: 1; min-width: 0; }
+.small { font-size: 13px; color: #879687; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Lantern</h1>
+    <select id="game" aria-label="Game">
+      <option value="zork1">Zork I</option>
+      <option value="zork2">Zork II</option>
+      <option value="zork3">Zork III</option>
+    </select>
+    <button id="newGame" type="button">New game</button>
+  </header>
+
+  <div id="status">Checking Lantern…</div>
+  <pre id="screen">Lantern browser client loading.</pre>
+
+  <form id="commandForm">
+    <input id="command" type="text" autocomplete="off" spellcheck="false"
+           maxlength="200" placeholder="Your move…" disabled>
+    <button id="send" type="submit" disabled>Send</button>
+  </form>
+
+  <p class="small">
+    This is a thin client. Lantern stores the ordered move list and replays it through dfrotz with a fixed seed.
+  </p>
+</main>
+
+<script>
+(() => {
+  const game = document.getElementById("game");
+  const newGame = document.getElementById("newGame");
+  const form = document.getElementById("commandForm");
+  const command = document.getElementById("command");
+  const send = document.getElementById("send");
+  const screen = document.getElementById("screen");
+  const status = document.getElementById("status");
+
+  let sessionId = null;
+
+  const api = path => new URL(path.replace(/^\//, ""), window.location.href).toString();
+
+  function setBusy(busy) {
+    game.disabled = busy;
+    newGame.disabled = busy;
+    command.disabled = busy || !sessionId;
+    send.disabled = busy || !sessionId;
+  }
+
+  function showResult(result) {
+    screen.textContent = result && result.stdout ? result.stdout : "(no dfrotz output)";
+    screen.scrollTop = screen.scrollHeight;
+  }
+
+  async function request(path, options = {}) {
+    const response = await fetch(api(path), {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      }
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+    return body;
+  }
+
+  async function health() {
+    try {
+      const body = await request("health", { method: "GET", headers: {} });
+      const missing = Object.entries(body.games || {})
+        .filter(([, value]) => !value.present)
+        .map(([name]) => name);
+      status.textContent = missing.length
+        ? `Lantern is up. Missing game files: ${missing.join(", ")}`
+        : "Lantern is up. Start a game.";
+    } catch (err) {
+      status.textContent = `Lantern unavailable: ${err.message}`;
+    }
+  }
+
+  async function startGame() {
+    setBusy(true);
+    status.textContent = `Starting ${game.options[game.selectedIndex].text}…`;
+    try {
+      const body = await request("api/session", {
+        method: "POST",
+        body: JSON.stringify({ game: game.value, seed: 1 })
+      });
+      sessionId = body.session.id;
+      showResult(body.result);
+      status.textContent = `Session ${sessionId} · 0 moves`;
+    } catch (err) {
+      sessionId = null;
+      screen.textContent = `Error: ${err.message}`;
+      status.textContent = "Could not start session.";
+    } finally {
+      setBusy(false);
+      if (sessionId) command.focus();
+    }
+  }
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    const move = command.value.trim();
+    if (!move || !sessionId) return;
+
+    command.value = "";
+    setBusy(true);
+    status.textContent = `Sending: ${move}`;
+
+    try {
+      const body = await request(`api/session/${sessionId}/move`, {
+        method: "POST",
+        body: JSON.stringify({ command: move })
+      });
+      showResult(body.result);
+      status.textContent = `Session ${sessionId} · ${body.session.moves.length} moves`;
+    } catch (err) {
+      status.textContent = `Move failed: ${err.message}`;
+    } finally {
+      setBusy(false);
+      command.focus();
+    }
+  });
+
+  newGame.addEventListener("click", startGame);
+  health();
+})();
+</script>
+</body>
+</html>
