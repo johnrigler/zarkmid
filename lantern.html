@@ -31,7 +31,8 @@ main {
   flex-direction: column;
   overflow: hidden;
 }
-header { flex: 0 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }\nbody.playing header { display: none; }
+header { flex: 0 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+body.playing header { display: none; }
 h1 { font-size: 20px; margin: 0 auto 0 0; font-weight: 600; }
 select, button, input {
   font: inherit;
@@ -81,6 +82,12 @@ button { cursor: pointer; }
 }
 #movePad .blank {
   visibility: hidden;
+}
+#movePad .action {
+  grid-column: span 2;
+  width: auto;
+  height: 42px;
+  font-size: 12px;
 }
 button:disabled, input:disabled { opacity: .5; cursor: default; }
 #status { display: none; }
@@ -177,6 +184,9 @@ form {
     <button type="button" data-move="sw" aria-label="Southwest">↙</button>
     <button type="button" data-move="s" aria-label="South">↓</button>
     <button type="button" data-move="se" aria-label="Southeast">↘</button>
+
+    <button id="saveGame" class="action" type="button">Save game</button>
+    <button id="chooseGame" class="action" type="button">Games</button>
   </div>
 
   <p class="small">
@@ -195,7 +205,9 @@ form {
   const status = document.getElementById("status");
   const gameLocation = document.getElementById("gameLocation");
   const gameStats = document.getElementById("gameStats");
-  const movePad = document.getElementById("movePad");\n  const saveGame = document.getElementById("saveGame");\n  const chooseGame = document.getElementById("chooseGame");
+  const movePad = document.getElementById("movePad");
+  const saveGame = document.getElementById("saveGame");
+  const chooseGame = document.getElementById("chooseGame");
 
   let sessionId = null;
   let holdTimer = null;
@@ -286,6 +298,7 @@ form {
         body: JSON.stringify({ game: game.value, seed: 1 })
       });
       sessionId = body.session.id;
+      document.body.classList.add("playing");
       showResult(body.result);
       status.textContent = `Session ${sessionId} · 0 moves`;
     } catch (err) {
@@ -344,11 +357,8 @@ form {
 
     const sendRect = send.getBoundingClientRect();
     const padRect = movePad.getBoundingClientRect();
-    const centerOffsetX = 8 + (2 * 54) + 24;
-    const centerOffsetY = 8 + 54 + 24;
-
-    let left = sendRect.left + sendRect.width / 2 - centerOffsetX;
-    let top = sendRect.top + sendRect.height / 2 - centerOffsetY;
+    let left = sendRect.right - padRect.width;
+    let top = sendRect.top - padRect.height - 8;
     left = Math.max(6, Math.min(left, window.innerWidth - padRect.width - 6));
     top = Math.max(6, Math.min(top, window.innerHeight - padRect.height - 6));
 
@@ -417,6 +427,39 @@ form {
     button.addEventListener("click", () => submitMove(button.dataset.move));
   });
   movePad.querySelector("[data-cancel]").addEventListener("click", closeMovePad);
+
+  saveGame.addEventListener("click", async () => {
+    if (!sessionId) return;
+    try {
+      const session = await request(`api/session/${sessionId}`, {
+        method: "GET",
+        headers: {}
+      });
+      const blob = new Blob([JSON.stringify(session, null, 2) + "\n"], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${session.game || "lantern"}-${sessionId}.lantern.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      status.textContent = "Game saved.";
+    } catch (err) {
+      status.textContent = `Save failed: ${err.message}`;
+    } finally {
+      closeMovePad();
+      command.focus();
+    }
+  });
+
+  chooseGame.addEventListener("click", () => {
+    closeMovePad();
+    document.body.classList.remove("playing");
+    game.focus();
+  });
 
   newGame.addEventListener("click", startGame);
   health();
