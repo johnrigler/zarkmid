@@ -7,14 +7,30 @@
 <style>
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+body {
   background: #0d0f0d;
   color: #d8e2d8;
   font: 16px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
-main { max-width: 960px; margin: 0 auto; padding: 24px; }
-header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+main {
+  width: 100%;
+  max-width: 960px;
+  height: var(--lantern-height, 100dvh);
+  max-height: var(--lantern-height, 100dvh);
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+header { flex: 0 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 h1 { font-size: 20px; margin: 0 auto 0 0; font-weight: 600; }
 select, button, input {
   font: inherit;
@@ -26,21 +42,37 @@ select, button, input {
 }
 button { cursor: pointer; }
 button:disabled, input:disabled { opacity: .5; cursor: default; }
-#status { margin: 0 0 10px; min-height: 1.4em; color: #9aae9a; }
+#status { flex: 0 0 auto; margin: 0 0 8px; min-height: 1.4em; color: #9aae9a; }
 #screen {
-  min-height: 55vh;
-  max-height: 68vh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   background: #080a08;
   border: 1px solid #2d352d;
-  padding: 16px;
-  margin: 0 0 12px;
+  padding: 14px;
+  margin: 0 0 10px;
 }
-form { display: flex; gap: 8px; }
+form {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
 #command { flex: 1; min-width: 0; }
-.small { font-size: 13px; color: #879687; }
+.small { flex: 0 0 auto; font-size: 13px; color: #879687; margin: 10px 0 0; }
+
+@media (max-width: 700px), (max-height: 700px) {
+  main { padding: 10px; }
+  header { margin-bottom: 6px; }
+  h1 { font-size: 18px; }
+  select, button, input { padding: 8px 9px; }
+  #status { margin-bottom: 6px; font-size: 14px; }
+  #screen { padding: 10px; margin-bottom: 8px; }
+  .small { display: none; }
+}
 </style>
 </head>
 <body>
@@ -80,6 +112,17 @@ form { display: flex; gap: 8px; }
   const status = document.getElementById("status");
 
   let sessionId = null;
+
+  function updateViewportHeight() {
+    const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty("--lantern-height", height + "px");
+  }
+
+  updateViewportHeight();
+  window.addEventListener("resize", updateViewportHeight);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", updateViewportHeight);
+  }
 
   const api = path => new URL(path.replace(/^\//, ""), window.location.href).toString();
 
