@@ -228,6 +228,14 @@ class LanternHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
+    def send_html(self, status: int, html: str) -> None:
+        encoded = html.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
     def read_json(self) -> dict[str, Any]:
         length = int(self.headers.get("Content-Length", "0"))
         if length <= 0:
@@ -251,6 +259,12 @@ class LanternHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         try:
             path = urlparse(self.path).path
+
+            if path == "/":
+                if not FRONTEND_FILE.is_file():
+                    raise LanternError(f"Frontend file not found: {FRONTEND_FILE}")
+                self.send_html(200, FRONTEND_FILE.read_text(encoding="utf-8"))
+                return
 
             if path == "/health":
                 games = {}
