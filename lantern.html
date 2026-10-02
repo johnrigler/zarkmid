@@ -20,6 +20,7 @@ body {
   font: 16px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 main {
+  position: relative;
   width: 100%;
   max-width: 960px;
   height: var(--lantern-height, 100dvh);
@@ -41,6 +42,46 @@ select, button, input {
   padding: 9px 10px;
 }
 button { cursor: pointer; }
+#send { touch-action: none; user-select: none; -webkit-user-select: none; }
+#movePad {
+  position: fixed;
+  z-index: 1000;
+  display: none;
+  grid-template-columns: repeat(4, 48px);
+  grid-template-rows: repeat(3, 48px);
+  gap: 6px;
+  padding: 8px;
+  background: #0d0f0d;
+  border: 1px solid #586658;
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.45);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#movePad.open { display: grid; }
+#movePad button {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  border-radius: 8px;
+}
+#movePad button[data-move].active {
+  background: #334033;
+  border-color: #9aae9a;
+}
+#movePad .vertical {
+  font-size: 16px;
+}
+#movePad .cancel {
+  color: #879687;
+}
+#movePad .blank {
+  visibility: hidden;
+}
 button:disabled, input:disabled { opacity: .5; cursor: default; }
 #status { flex: 0 0 auto; margin: 0 0 8px; min-height: 1.4em; color: #9aae9a; }
 #screen {
@@ -93,8 +134,25 @@ form {
   <form id="commandForm">
     <input id="command" type="text" autocomplete="off" spellcheck="false"
            maxlength="200" placeholder="Your move…" disabled>
-    <button id="send" type="submit" disabled>Send</button>
+    <button id="send" type="button" disabled>Send</button>
   </form>
+
+  <div id="movePad" aria-hidden="true">
+    <button class="vertical" type="button" data-move="u" aria-label="Up">U</button>
+    <button type="button" data-move="nw" aria-label="Northwest">↖</button>
+    <button type="button" data-move="n" aria-label="North">↑</button>
+    <button type="button" data-move="ne" aria-label="Northeast">↗</button>
+
+    <button class="vertical" type="button" data-move="d" aria-label="Down">D</button>
+    <button type="button" data-move="w" aria-label="West">←</button>
+    <button class="cancel" type="button" data-cancel="true" aria-label="Cancel movement">●</button>
+    <button type="button" data-move="e" aria-label="East">→</button>
+
+    <span class="blank" aria-hidden="true"></span>
+    <button type="button" data-move="sw" aria-label="Southwest">↙</button>
+    <button type="button" data-move="s" aria-label="South">↓</button>
+    <button type="button" data-move="se" aria-label="Southeast">↘</button>
+  </div>
 
   <p class="small">
     This is a thin client. Lantern stores the ordered move list and replays it through dfrotz with a fixed seed.
@@ -110,8 +168,14 @@ form {
   const send = document.getElementById("send");
   const screen = document.getElementById("screen");
   const status = document.getElementById("status");
+  const movePad = document.getElementById("movePad");
 
   let sessionId = null;
+  let holdTimer = null;
+  let movePadOpen = false;
+  let activeMove = null;
+  let sendPointerId = null;
+  const HOLD_MS = 350;
 
   function updateViewportHeight() {
     const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -204,12 +268,12 @@ form {
     }
   }
 
-  form.addEventListener("submit", async event => {
-    event.preventDefault();
-    const move = command.value.trim();
+  async function submitMove(move) {
+    move = String(move || "").trim();
     if (!move || !sessionId) return;
 
     command.value = "";
+    closeMovePad();
     setBusy(true);
     status.textContent = `Sending: ${move}`;
 
@@ -227,7 +291,99 @@ form {
       command.focus();
       scrollScreenToBottom();
     }
+  }
+
+  function closeMovePad() {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+    movePadOpen = false;
+    activeMove = null;
+    movePad.classList.remove("open");
+    movePad.setAttribute("aria-hidden", "true");
+    movePad.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
+  }
+
+  function openMovePad() {
+    if (!sessionId || send.disabled) return;
+    movePadOpen = true;
+    movePad.classList.add("open");
+    movePad.setAttribute("aria-hidden", "false");
+
+    const sendRect = send.getBoundingClientRect();
+    const padRect = movePad.getBoundingClientRect();
+    const centerOffsetX = 8 + (2 * 54) + 24;
+    const centerOffsetY = 8 + 54 + 24;
+
+    let left = sendRect.left + sendRect.width / 2 - centerOffsetX;
+    let top = sendRect.top + sendRect.height / 2 - centerOffsetY;
+    left = Math.max(6, Math.min(left, window.innerWidth - padRect.width - 6));
+    top = Math.max(6, Math.min(top, window.innerHeight - padRect.height - 6));
+
+    movePad.style.left = left + "px";
+    movePad.style.top = top + "px";
+  }
+
+  function updateMoveSelection(clientX, clientY) {
+    movePad.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
+    activeMove = null;
+    const el = document.elementFromPoint(clientX, clientY);
+    const button = el && el.closest ? el.closest("#movePad button[data-move]") : null;
+    if (button) {
+      button.classList.add("active");
+      activeMove = button.dataset.move;
+    }
+  }
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    submitMove(command.value);
   });
+
+  send.addEventListener("click", () => {
+    if (!movePadOpen) submitMove(command.value);
+  });
+
+  send.addEventListener("contextmenu", event => event.preventDefault());
+
+  send.addEventListener("pointerdown", event => {
+    if (send.disabled) return;
+    sendPointerId = event.pointerId;
+    send.setPointerCapture?.(event.pointerId);
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      openMovePad();
+      updateMoveSelection(event.clientX, event.clientY);
+    }, HOLD_MS);
+  });
+
+  send.addEventListener("pointermove", event => {
+    if (event.pointerId !== sendPointerId || !movePadOpen) return;
+    updateMoveSelection(event.clientX, event.clientY);
+  });
+
+  send.addEventListener("pointerup", event => {
+    if (event.pointerId !== sendPointerId) return;
+    clearTimeout(holdTimer);
+    holdTimer = null;
+    const chosen = movePadOpen ? activeMove : null;
+    const wasOpen = movePadOpen;
+    closeMovePad();
+    sendPointerId = null;
+    if (wasOpen && chosen) {
+      event.preventDefault();
+      submitMove(chosen);
+    }
+  });
+
+  send.addEventListener("pointercancel", () => {
+    sendPointerId = null;
+    closeMovePad();
+  });
+
+  movePad.querySelectorAll("button[data-move]").forEach(button => {
+    button.addEventListener("click", () => submitMove(button.dataset.move));
+  });
+  movePad.querySelector("[data-cancel]").addEventListener("click", closeMovePad);
 
   newGame.addEventListener("click", startGame);
   health();
