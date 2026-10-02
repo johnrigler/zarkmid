@@ -186,7 +186,10 @@ form {
     <button type="button" data-move="se" aria-label="Southeast">↘</button>
 
     <button id="saveGame" class="action" type="button">Save game</button>
+    <button id="loadGame" class="action" type="button">Load game</button>
     <button id="chooseGame" class="action" type="button">Games</button>
+    <span class="blank" aria-hidden="true"></span>
+    <input id="loadFile" type="file" accept="application/json,.json" hidden>
   </div>
 
   <p class="small">
@@ -207,6 +210,8 @@ form {
   const gameStats = document.getElementById("gameStats");
   const movePad = document.getElementById("movePad");
   const saveGame = document.getElementById("saveGame");
+  const loadGame = document.getElementById("loadGame");
+  const loadFile = document.getElementById("loadFile");
   const chooseGame = document.getElementById("chooseGame");
 
   let sessionId = null;
@@ -404,10 +409,45 @@ form {
     }
   });
 
+  loadGame.addEventListener("click", () => {
+    closeMovePad();
+    loadFile.value = "";
+    loadFile.click();
+  });
+
+  loadFile.addEventListener("change", async () => {
+    const file = loadFile.files && loadFile.files[0];
+    if (!file) return;
+
+    setBusy(true);
+    try {
+      const saved = JSON.parse(await file.text());
+      const body = await request("api/session/import", {
+        method: "POST",
+        body: JSON.stringify({ session: saved })
+      });
+
+      sessionId = body.session.id;
+      game.value = body.session.game;
+      document.body.classList.add("playing");
+      showResult(body.result);
+      status.textContent = `Loaded ${file.name} · ${body.session.moves.length} moves`;
+    } catch (err) {
+      status.textContent = `Load failed: ${err.message}`;
+      screen.textContent = `Load failed: ${err.message}`;
+    } finally {
+      setBusy(false);
+      command.focus();
+      scrollScreenToBottom();
+    }
+  });
+
   chooseGame.addEventListener("click", () => {
     closeMovePad();
-    document.body.classList.remove("playing");
-    game.focus();
+    const showing = !document.body.classList.contains("playing");
+    document.body.classList.toggle("playing", showing);
+    if (!showing) game.focus();
+    else command.focus();
   });
 
   newGame.addEventListener("click", startGame);
