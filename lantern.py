@@ -49,6 +49,7 @@ MAX_COMMAND_LENGTH = 200
 MAX_MOVES = 5000
 DEFAULT_SEED = 1
 RUN_TIMEOUT_SECONDS = 20
+DFROTZ_WIDTH = int(os.environ.get("LANTERN_DFROTZ_WIDTH", "200"))
 
 
 class LanternError(Exception):
@@ -126,7 +127,7 @@ def run_game(game: str, moves: list[str], seed: int = DEFAULT_SEED) -> dict[str,
 
     started = time.monotonic()
     result = subprocess.run(
-        [dfrotz_path(), "-s", str(int(seed)), str(path)],
+        [dfrotz_path(), "-w", str(DFROTZ_WIDTH), "-s", str(int(seed)), str(path)],
         input=command_stream,
         text=True,
         capture_output=True,
