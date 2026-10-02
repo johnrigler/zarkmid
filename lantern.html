@@ -166,7 +166,7 @@ form {
   <form id="commandForm">
     <input id="command" type="text" autocomplete="off" spellcheck="false"
            maxlength="200" placeholder="Your move…" disabled>
-    <button id="send" type="button" disabled>Send</button>
+    <button id="send" type="button" aria-label="Controls" aria-expanded="false" disabled>☰</button>
   </form>
 
   <div id="movePad" aria-hidden="true">
@@ -210,11 +210,7 @@ form {
   const chooseGame = document.getElementById("chooseGame");
 
   let sessionId = null;
-  let holdTimer = null;
   let movePadOpen = false;
-  let activeMove = null;
-  let sendPointerId = null;
-  const HOLD_MS = 350;
 
   function updateViewportHeight() {
     const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -319,7 +315,6 @@ form {
     if (!move || !sessionId) return;
 
     command.value = "";
-    closeMovePad();
     setBusy(true);
     status.textContent = `Sending: ${move}`;
 
@@ -340,13 +335,10 @@ form {
   }
 
   function closeMovePad() {
-    clearTimeout(holdTimer);
-    holdTimer = null;
     movePadOpen = false;
-    activeMove = null;
     movePad.classList.remove("open");
     movePad.setAttribute("aria-hidden", "true");
-    movePad.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
+    send.setAttribute("aria-expanded", "false");
   }
 
   function openMovePad() {
@@ -354,6 +346,7 @@ form {
     movePadOpen = true;
     movePad.classList.add("open");
     movePad.setAttribute("aria-hidden", "false");
+    send.setAttribute("aria-expanded", "true");
 
     const sendRect = send.getBoundingClientRect();
     const padRect = movePad.getBoundingClientRect();
@@ -366,61 +359,17 @@ form {
     movePad.style.top = top + "px";
   }
 
-  function updateMoveSelection(clientX, clientY) {
-    movePad.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
-    activeMove = null;
-    const el = document.elementFromPoint(clientX, clientY);
-    const button = el && el.closest ? el.closest("#movePad button[data-move]") : null;
-    if (button) {
-      button.classList.add("active");
-      activeMove = button.dataset.move;
-    }
-  }
-
   form.addEventListener("submit", event => {
     event.preventDefault();
     submitMove(command.value);
   });
 
   send.addEventListener("click", () => {
-    if (!movePadOpen) submitMove(command.value);
-  });
-
-  send.addEventListener("contextmenu", event => event.preventDefault());
-
-  send.addEventListener("pointerdown", event => {
-    if (send.disabled) return;
-    sendPointerId = event.pointerId;
-    send.setPointerCapture?.(event.pointerId);
-    clearTimeout(holdTimer);
-    holdTimer = setTimeout(() => {
+    if (movePadOpen) {
+      closeMovePad();
+    } else {
       openMovePad();
-      updateMoveSelection(event.clientX, event.clientY);
-    }, HOLD_MS);
-  });
-
-  send.addEventListener("pointermove", event => {
-    if (event.pointerId !== sendPointerId || !movePadOpen) return;
-    updateMoveSelection(event.clientX, event.clientY);
-  });
-
-  send.addEventListener("pointerup", event => {
-    if (event.pointerId !== sendPointerId) return;
-    clearTimeout(holdTimer);
-    holdTimer = null;
-    const chosen = movePadOpen ? activeMove : null;
-    const wasOpen = movePadOpen;
-    closeMovePad();
-    sendPointerId = null;
-    if (wasOpen && chosen) {
-      event.preventDefault();
-      submitMove(chosen);
     }
-  });
-
-  send.addEventListener("pointercancel", () => {
-    sendPointerId = null;
-    closeMovePad();
   });
 
   movePad.querySelectorAll("button[data-move]").forEach(button => {
