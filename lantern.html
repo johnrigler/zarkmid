@@ -185,6 +185,11 @@ form {
     <button type="button" data-move="s" aria-label="South">↓</button>
     <button type="button" data-move="se" aria-label="Southeast">↘</button>
 
+    <button type="button" data-command="inventory" aria-label="Inventory">I</button>
+    <button type="button" data-command="look" aria-label="Look">L</button>
+    <span class="blank" aria-hidden="true"></span>
+    <span class="blank" aria-hidden="true"></span>
+
     <button id="saveGame" class="action" type="button">Save game</button>
     <button id="loadGame" class="action" type="button">Load game</button>
     <button id="chooseGame" class="action" type="button">Games</button>
@@ -379,6 +384,9 @@ form {
 
   movePad.querySelectorAll("button[data-move]").forEach(button => {
     button.addEventListener("click", () => submitMove(button.dataset.move));
+  });
+  movePad.querySelectorAll("button[data-command]").forEach(button => {
+    button.addEventListener("click", () => submitMove(button.dataset.command));
   });
   movePad.querySelector("[data-cancel]").addEventListener("click", closeMovePad);
 
