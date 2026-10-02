@@ -21,6 +21,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -147,6 +148,65 @@ def run_game(game: str, moves: list[str], seed: int = DEFAULT_SEED) -> dict[str,
         "returnCode": result.returncode,
         "elapsedMs": elapsed_ms,
     }
+
+
+def infer_location(stdout: str) -> str | None:
+    """Best-effort extraction of the most recent Zork room heading."""
+    common_lower = {"a", "an", "and", "at", "by", "for", "from", "in", "of", "on", "the", "to", "with"}
+
+    for raw in reversed(stdout.splitlines()):
+        line = raw.strip()
+        if not line or line == ">" or len(line) > 64:
+            continue
+        if any(ch in line for ch in ".!?,;:()[]{}=/\\"):
+            continue
+        words = line.split()
+        if not words or len(words) > 8:
+            continue
+
+        heading_like = True
+        for i, word in enumerate(words):
+            token = word.strip("'\"")
+            if not token:
+                continue
+            if token.lower() in common_lower and i > 0:
+                continue
+            if not token[0].isupper() and not token.isupper():
+                heading_like = False
+                break
+
+        if heading_like:
+            return line
+
+    return None
+
+
+def probe_score(game: str, moves: list[str], seed: int = DEFAULT_SEED) -> int | None:
+    """Replay the same state with SCORE appended, without persisting that probe move."""
+    probe = run_game(game, [*moves, "score"], seed)
+    text = probe["stdout"]
+
+    patterns = (
+        r"\bscore\s+is\s+(-?\d+)",
+        r"\byou\s+have\s+scored\s+(-?\d+)",
+        r"\bscore\s*[:=]\s*(-?\d+)",
+    )
+    for pattern in patterns:
+        matches = re.findall(pattern, text, flags=re.IGNORECASE)
+        if matches:
+            return int(matches[-1])
+
+    return None
+
+
+def add_status(result: dict[str, Any]) -> dict[str, Any]:
+    status = {
+        "location": infer_location(result.get("stdout", "")),
+        "score": probe_score(result["game"], result["moves"], result["seed"]),
+        "moves": result["moveCount"],
+    }
+    result["status"] = status
+    return result
 
 
 def session_file(session_id: str) -> Path:
@@ -310,7 +370,7 @@ class LanternHandler(BaseHTTPRequestHandler):
                 game = str(body.get("game", "zork1"))
                 seed = int(body.get("seed", DEFAULT_SEED))
                 session = create_session(game, seed)
-                initial = run_game(game, [], seed)
+                initial = add_status(run_game(game, [], seed))
                 self.send_json(201, {"session": session, "result": initial})
                 return
 
@@ -320,7 +380,7 @@ class LanternHandler(BaseHTTPRequestHandler):
                 moves = body.get("moves", [])
                 if not isinstance(moves, list):
                     raise LanternError("moves must be an array.")
-                self.send_json(200, run_game(game, moves, seed))
+                self.send_json(200, add_status(run_game(game, moves, seed)))
                 return
 
             prefix = "/api/session/"
@@ -332,6 +392,7 @@ class LanternHandler(BaseHTTPRequestHandler):
                     raise LanternError("command must be a string.")
 
                 session, result = add_move(session_id, command)
+                result = add_status(result)
                 self.send_json(200, {"session": session, "result": result})
                 return
 
