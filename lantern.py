@@ -49,7 +49,7 @@ MAX_COMMAND_LENGTH = 200
 MAX_MOVES = 5000
 DEFAULT_SEED = 1
 RUN_TIMEOUT_SECONDS = 20
-DFROTZ_WIDTH = int(os.environ.get("LANTERN_DFROTZ_WIDTH", "200"))
+DFROTZ_WIDTH = int(os.environ.get("LANTERN_DFROTZ_WIDTH", "255"))
 
 
 class LanternError(Exception):
@@ -91,6 +91,49 @@ def dfrotz_path() -> str:
             f"dfrotz not found. Set LANTERN_DFROTZ or install frotz. Requested: {DFROTZ}"
         )
     return resolved
+
+
+def unwrap_dfrotz(text: str) -> str:
+    """
+    Remove only dfrotz's artificial long-line wrapping.
+
+    Z-machine V3 exposes screen width as a one-byte character count, so even a
+    deliberately wide dfrotz screen still tops out at 255 columns.  The browser
+    should own visual wrapping.  A line close to the configured dfrotz width is
+    therefore treated as a soft wrap and joined to the following line.
+
+    Short lines, blank lines, prompts, headings, and other intentional layout
+    are left untouched.
+    """
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+    if not lines:
+        return text
+
+    threshold = max(80, DFROTZ_WIDTH - 40)
+    out: list[str] = []
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        while (
+            len(line) >= threshold
+            and i + 1 < len(lines)
+            and lines[i + 1] != ""
+            and not lines[i + 1].startswith(">")
+        ):
+            i += 1
+            continuation = lines[i].lstrip()
+            if continuation:
+                line = line.rstrip() + " " + continuation
+            else:
+                break
+
+        out.append(line)
+        i += 1
+
+    return "\n".join(out)
 
 
 def clean_moves(moves: list[Any]) -> list[str]:
@@ -144,7 +187,7 @@ def run_game(game: str, moves: list[str], seed: int = DEFAULT_SEED) -> dict[str,
         "seed": int(seed),
         "moves": cleaned,
         "moveCount": len(cleaned),
-        "stdout": result.stdout,
+        "stdout": unwrap_dfrotz(result.stdout),
         "stderr": result.stderr,
         "returnCode": result.returncode,
         "elapsedMs": elapsed_ms,
