@@ -554,8 +554,34 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     });
   }
 
+  function displayMove(move) {
+    const text = String(move || "");
+    return /^(n|s|e|w|u|d|ne|nw|se|sw)$/i.test(text)
+      ? text.toUpperCase()
+      : text;
+  }
+
+  function transcriptWithMoves(result) {
+    const stdout = result && result.stdout ? String(result.stdout) : "";
+    const moves = result && Array.isArray(result.moves) ? result.moves : [];
+    if (!stdout) return "(no dfrotz output)";
+    if (!moves.length) return stdout;
+
+    let moveIndex = 0;
+    return stdout.split("\n").map(line => {
+      if (/^\s*>\s*$/.test(line) && moveIndex < moves.length) {
+        const command = displayMove(moves[moveIndex++]);
+        return line.replace(/>\s*$/, "> " + command);
+      }
+      if (/^\s*>\s*\S/.test(line) && moveIndex < moves.length) {
+        moveIndex++;
+      }
+      return line;
+    }).join("\n");
+  }
+
   function showResult(result) {
-    screen.textContent = result && result.stdout ? result.stdout : "(no dfrotz output)";
+    screen.textContent = transcriptWithMoves(result);
     if (result && result.status) {
       gameLocation.textContent = result.status.location || "Unknown";
       const score = Number.isInteger(result.status.score) ? result.status.score : "—";
