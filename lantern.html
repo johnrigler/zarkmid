@@ -245,6 +245,9 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   </div>
 </dialog>
 
+<script src="https://johnrigler.github.io/chisel/chisel.js?rev=20260906b"></script>
+<script src="https://johnrigler.github.io/chisel/chisel.sign.js?rev=20260906b"></script>
+<script src="https://johnrigler.github.io/chisel/chisel.identity.js?rev=20261003b"></script>
 <script>
 (() => {
   const game = document.getElementById("game");
@@ -276,7 +279,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   const FILE_PROXY_URL = "https://rigler.org/fileproxy";
   const CHISEL_IDENTITY_URL = "https://johnrigler.github.io/chisel/identity.html";
   const IDENTITY_STORAGE_KEY = "lantern.chiselIdentity.v1";
-  const PENDING_IDENTITY_SAVE_KEY = "lantern.pendingIdentitySave.v1";
+  const PENDING_SIGNED_SAVE_KEY = "lantern.pendingSignedSave.v1";
 
   let sessionId = null;
   let movePadOpen = false;
@@ -303,8 +306,8 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
 
   const api = path => new URL(path.replace(/^\//, ""), window.location.href).toString();
 
-  function identityDirectory() {
-    return "lantern/" + chiselIdentity.replace(/[^a-zA-Z0-9_-]/g, "_");
+  function identityDirectory(identity = chiselIdentity) {
+    return "lantern/" + String(identity || "").replace(/[^a-zA-Z0-9_-]/g, "_");
   }
 
   function shortIdentity(identity) {
@@ -326,13 +329,17 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     if (/^chisel:v1:[0-9a-fA-F]{66}$/.test(incoming)) {
       chiselIdentity = incoming.toLowerCase();
       try { localStorage.setItem(IDENTITY_STORAGE_KEY, chiselIdentity); } catch (error) {}
-      params.delete("identity");
-      const clean = window.location.pathname + (params.toString() ? "?" + params.toString() : "") + window.location.hash;
-      window.history.replaceState(null, "", clean);
     } else {
       try { chiselIdentity = localStorage.getItem(IDENTITY_STORAGE_KEY) || ""; } catch (error) {}
     }
     mySaves.hidden = !chiselIdentity;
+  }
+
+  function cleanSigningParams() {
+    const params = new URLSearchParams(window.location.search);
+    ["identity", "signature", "digest", "algorithm", "request"].forEach(key => params.delete(key));
+    const clean = window.location.pathname + (params.toString() ? "?" + params.toString() : "") + window.location.hash;
+    window.history.replaceState(null, "", clean);
   }
 
   async function fileProxyPost(path, body) {
@@ -346,30 +353,123 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     return data;
   }
 
-  async function saveSessionToIdentity(session) {
-    if (!chiselIdentity) throw new Error("No Chisel identity is loaded.");
+  async function saveSignedEnvelope(envelope) {
+    if (!envelope || envelope.format !== "chisel-signed-v1") throw new Error("Expected a signed Chisel artifact.");
+    const identity = String(envelope.identity || "");
+    if (!/^chisel:v1:[0-9a-f]{66}$/.test(identity)) throw new Error("Signed artifact has no valid identity.");
+    const session = envelope.payload && envelope.payload.session;
+    if (!session) throw new Error("Signed Lantern artifact has no session.");
     const random = Array.from(crypto.getRandomValues(new Uint8Array(4)))
       .map(value => value.toString(16).padStart(2, "0")).join("");
     const filename = (session.game || "lantern") + "-" + Date.now() + "-" + random + ".lantern.json";
-    const path = identityDirectory() + "/" + filename;
-    const payload = {
-      format: "lantern-save-v1",
-      identity: chiselIdentity,
-      savedAt: new Date().toISOString(),
-      session
-    };
+    const path = identityDirectory(identity) + "/" + filename;
     const response = await fetch(FILE_PROXY_URL + "/save?filename=" + encodeURIComponent(path), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(envelope)
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.error) throw new Error(data.error || ("HTTP " + response.status));
     return data;
   }
 
+  async function beginSignedSave(session) {
+    if (!window.CHISEL || typeof CHISEL.artifactDigest !== "function") {
+      throw new Error("Chisel signing support is unavailable.");
+    }
+    const payload = {
+      savedAt: new Date().toISOString(),
+      session
+    };
+    const digest = await CHISEL.artifactDigest("lantern-save", payload);
+    const requestId = Array.from(crypto.getRandomValues(new Uint8Array(12)))
+      .map(value => value.toString(16).padStart(2, "0")).join("");
+    try {
+      sessionStorage.setItem(PENDING_SIGNED_SAVE_KEY, JSON.stringify({
+        type: "lantern-save",
+        payload,
+        digest,
+        request: requestId
+      }));
+    } catch (error) {
+      throw new Error("Could not preserve the save while opening Chisel.");
+    }
+
+    const returnUrl = new URL(window.location.href);
+    ["identity", "signature", "digest", "algorithm", "request"].forEach(key => returnUrl.searchParams.delete(key));
+    const signer = new URL(CHISEL_IDENTITY_URL);
+    signer.searchParams.set("return", returnUrl.toString());
+    signer.searchParams.set("app", "Lantern");
+    signer.searchParams.set("signType", "lantern-save");
+    signer.searchParams.set("signDigest", digest);
+    signer.searchParams.set("request", requestId);
+    window.location.href = signer.toString();
+  }
+
+  async function consumeSignedSaveReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const signature = String(params.get("signature") || "").trim().toLowerCase();
+    if (!signature) {
+      if (params.has("identity")) cleanSigningParams();
+      return false;
+    }
+
+    const incomingIdentity = String(params.get("identity") || "").trim().toLowerCase();
+    const digest = String(params.get("digest") || "").trim().toLowerCase();
+    const algorithm = String(params.get("algorithm") || "").trim();
+    const requestId = String(params.get("request") || "").trim();
+    let pending;
+    try {
+      pending = JSON.parse(sessionStorage.getItem(PENDING_SIGNED_SAVE_KEY) || "null");
+    } catch (error) {}
+
+    if (!pending) throw new Error("The pending Lantern save is no longer available.");
+    if (pending.request !== requestId) throw new Error("Signature request identifier does not match.");
+    if (pending.digest !== digest) throw new Error("Returned digest does not match the pending save.");
+    if (algorithm !== "secp256k1-sha256") throw new Error("Unexpected signature algorithm.");
+
+    const envelope = {
+      format: "chisel-signed-v1",
+      type: pending.type,
+      identity: incomingIdentity,
+      payload: pending.payload,
+      proof: {
+        algorithm,
+        digest,
+        signature
+      }
+    };
+
+    if (!(await CHISEL.verifyArtifact(envelope))) {
+      throw new Error("Chisel signature verification failed.");
+    }
+
+    chiselIdentity = incomingIdentity;
+    try { localStorage.setItem(IDENTITY_STORAGE_KEY, chiselIdentity); } catch (error) {}
+    await saveSignedEnvelope(envelope);
+    try { sessionStorage.removeItem(PENDING_SIGNED_SAVE_KEY); } catch (error) {}
+    cleanSigningParams();
+    mySaves.hidden = false;
+    status.textContent = "Signed save verified and stored in FileProxy.";
+    pendingSavedSession = pending.payload.session;
+    saveIdentityText.textContent = "This save is signed by your Chisel identity and stored as a portable artifact.";
+    showIdentity(saveIdentityValue, chiselIdentity);
+    saveIdentityAction.textContent = "Signed & saved";
+    saveIdentityAction.disabled = true;
+    saveDialogClose.textContent = "Close";
+    if (typeof saveDialog.showModal === "function" && !saveDialog.open) saveDialog.showModal();
+    await refreshMySaves();
+    return true;
+  }
+
   async function loadSessionObject(saved, label) {
-    const session = saved && saved.session ? saved.session : saved;
+    let session = saved && saved.session ? saved.session : saved;
+    if (saved && saved.format === "chisel-signed-v1") {
+      if (saved.type !== "lantern-save") throw new Error("Signed artifact is not a Lantern save.");
+      if (!(await CHISEL.verifyArtifact(saved))) throw new Error("Signed save failed signature verification.");
+      session = saved.payload && saved.payload.session;
+      if (!session) throw new Error("Signed Lantern save has no session payload.");
+    }
     const body = await request("api/session/import", {
       method: "POST",
       body: JSON.stringify({ session })
@@ -385,16 +485,16 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   function openSaveChoice(session) {
     pendingSavedSession = session;
     if (chiselIdentity) {
-      saveIdentityText.textContent = "You can also keep a copy in FileProxy under your public Chisel identity.";
+      saveIdentityText.textContent = "Sign this save with your Chisel identity, then store the signed artifact in FileProxy.";
       showIdentity(saveIdentityValue, chiselIdentity);
-      saveIdentityAction.textContent = "Save to my identity";
+      saveIdentityAction.textContent = "Sign & save";
       saveIdentityAction.disabled = false;
       saveDialogClose.textContent = "Not now";
     } else {
-      saveIdentityText.textContent = "Optional: create or recover a Chisel identity so Lantern saves can follow you without requiring any cryptocurrency.";
+      saveIdentityText.textContent = "Optional: create or recover a Chisel identity, sign this save, and store the portable signed artifact.";
       saveIdentityValue.textContent = "";
       saveIdentityValue.title = "";
-      saveIdentityAction.textContent = "Create / use Chisel identity";
+      saveIdentityAction.textContent = "Create / use identity & sign";
       saveIdentityAction.disabled = false;
       saveDialogClose.textContent = "Not now";
     }
@@ -646,26 +746,11 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
 
   saveIdentityAction.addEventListener("click", async () => {
     if (!pendingSavedSession) return;
-    if (!chiselIdentity) {
-      try { sessionStorage.setItem(PENDING_IDENTITY_SAVE_KEY, JSON.stringify(pendingSavedSession)); } catch (error) {}
-      const returnUrl = new URL(window.location.href);
-      returnUrl.searchParams.delete("identity");
-      window.location.href = CHISEL_IDENTITY_URL + "?return=" + encodeURIComponent(returnUrl.toString()) + "&app=lantern";
-      return;
-    }
     saveIdentityAction.disabled = true;
     try {
-      await saveSessionToIdentity(pendingSavedSession);
-      status.textContent = "Saved JSON locally and to FileProxy under your Chisel identity.";
-      saveIdentityText.textContent = "This save is now attached to your Chisel identity.";
-      showIdentity(saveIdentityValue, chiselIdentity);
-      saveIdentityAction.textContent = "Saved";
-      saveIdentityAction.disabled = true;
-      saveDialogClose.textContent = "Close";
-      await refreshMySaves();
+      await beginSignedSave(pendingSavedSession);
     } catch (error) {
-      saveIdentityText.textContent = "FileProxy save failed: " + error.message;
-    } finally {
+      saveIdentityText.textContent = "Could not start signing: " + error.message;
       saveIdentityAction.disabled = false;
     }
   });
@@ -713,18 +798,17 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
 
   newGame.addEventListener("click", startGame);
   readIdentity();
-  if (chiselIdentity) {
-    refreshMySaves();
+  (async () => {
     try {
-      const pending = sessionStorage.getItem(PENDING_IDENTITY_SAVE_KEY);
-      if (pending) {
-        sessionStorage.removeItem(PENDING_IDENTITY_SAVE_KEY);
-        pendingSavedSession = JSON.parse(pending);
-        setTimeout(() => openSaveChoice(pendingSavedSession), 0);
-      }
-    } catch (error) {}
-  }
-  health();
+      const completed = await consumeSignedSaveReturn();
+      if (!completed && chiselIdentity) await refreshMySaves();
+    } catch (error) {
+      status.textContent = "Signed save failed: " + error.message;
+      cleanSigningParams();
+      if (chiselIdentity) await refreshMySaves();
+    }
+    await health();
+  })();
 })();
 </script>
 </body>
