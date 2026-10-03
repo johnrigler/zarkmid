@@ -237,6 +237,7 @@ form {
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", () => {
       updateViewportHeight();
+      if (movePadOpen) positionMovePad();
       scrollScreenToBottom();
     });
   }
@@ -354,6 +355,24 @@ form {
     send.setAttribute("aria-expanded", "false");
   }
 
+  function positionMovePad() {
+    if (!movePadOpen) return;
+
+    const sendRect = send.getBoundingClientRect();
+    const padRect = movePad.getBoundingClientRect();
+    const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
+    let left = sendRect.right - padRect.width;
+    let top = sendRect.top - padRect.height - 8;
+
+    left = Math.max(6, Math.min(left, viewportWidth - padRect.width - 6));
+    top = Math.max(6, Math.min(top, viewportHeight - padRect.height - 6));
+
+    movePad.style.left = left + "px";
+    movePad.style.top = top + "px";
+  }
+
   function openMovePad() {
     if (!sessionId || send.disabled) return;
     command.blur();
@@ -362,15 +381,14 @@ form {
     movePad.setAttribute("aria-hidden", "false");
     send.setAttribute("aria-expanded", "true");
 
-    const sendRect = send.getBoundingClientRect();
-    const padRect = movePad.getBoundingClientRect();
-    let left = sendRect.right - padRect.width;
-    let top = sendRect.top - padRect.height - 8;
-    left = Math.max(6, Math.min(left, window.innerWidth - padRect.width - 6));
-    top = Math.max(6, Math.min(top, window.innerHeight - padRect.height - 6));
+    positionMovePad();
 
-    movePad.style.left = left + "px";
-    movePad.style.top = top + "px";
+    requestAnimationFrame(() => {
+      positionMovePad();
+      requestAnimationFrame(positionMovePad);
+    });
+
+    setTimeout(positionMovePad, 250);
   }
 
   form.addEventListener("submit", event => {
