@@ -132,6 +132,23 @@ form {
 }
 #command { flex: 1; min-width: 0; }
 .small { flex: 0 0 auto; font-size: 13px; color: #879687; margin: 10px 0 0; }
+dialog {
+  width: min(92vw, 560px);
+  max-height: 80dvh;
+  overflow: auto;
+  border: 1px solid #586658;
+  border-radius: 10px;
+  background: #0d0f0d;
+  color: #d8e2d8;
+  padding: 0;
+}
+dialog::backdrop { background: rgba(0,0,0,.72); }
+.dialogBody { display: grid; gap: 12px; padding: 16px; }
+.dialogBody h2, .dialogBody p { margin: 0; }
+.dialogActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.identityValue { color: #9aae9a; overflow-wrap: anywhere; font-size: 12px; }
+.savedList { display: grid; gap: 8px; }
+.savedList button { width: 100%; text-align: left; }
 
 @media (max-width: 700px), (max-height: 700px) {
   main { padding: 10px; }
@@ -155,6 +172,7 @@ form {
     </select>
     <button id="newGame" type="button">New game</button>
     <button id="loadGameStart" type="button">Load game</button>
+    <button id="mySaves" type="button" hidden>My saves</button>
   </header>
 
   <div id="status" aria-live="polite"></div>
@@ -203,6 +221,30 @@ form {
   </p>
 </main>
 
+<dialog id="saveDialog">
+  <div class="dialogBody">
+    <h2>Game saved</h2>
+    <p>Your JSON save was downloaded normally.</p>
+    <p id="saveIdentityText" class="small"></p>
+    <code id="saveIdentityValue" class="identityValue"></code>
+    <div class="dialogActions">
+      <button id="saveIdentityAction" type="button"></button>
+      <button id="saveDialogClose" type="button">Not now</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="mySavesDialog">
+  <div class="dialogBody">
+    <h2>Your Lantern saves</h2>
+    <p id="mySavesIdentity" class="identityValue"></p>
+    <div id="mySavesList" class="savedList">Loading…</div>
+    <div class="dialogActions">
+      <button id="mySavesClose" type="button">Close</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
 (() => {
   const game = document.getElementById("game");
@@ -220,9 +262,25 @@ form {
   const loadGame = document.getElementById("loadGame");
   const loadFile = document.getElementById("loadFile");
   const chooseGame = document.getElementById("chooseGame");
+  const mySaves = document.getElementById("mySaves");
+  const saveDialog = document.getElementById("saveDialog");
+  const saveIdentityText = document.getElementById("saveIdentityText");
+  const saveIdentityValue = document.getElementById("saveIdentityValue");
+  const saveIdentityAction = document.getElementById("saveIdentityAction");
+  const saveDialogClose = document.getElementById("saveDialogClose");
+  const mySavesDialog = document.getElementById("mySavesDialog");
+  const mySavesIdentity = document.getElementById("mySavesIdentity");
+  const mySavesList = document.getElementById("mySavesList");
+  const mySavesClose = document.getElementById("mySavesClose");
+
+  const FILE_PROXY_URL = "https://rigler.org/fileproxy";
+  const CHISEL_IDENTITY_URL = "https://johnrigler.github.io/chisel/identity.html";
+  const IDENTITY_STORAGE_KEY = "lantern.chiselIdentity.v1";
 
   let sessionId = null;
   let movePadOpen = false;
+  let chiselIdentity = "";
+  let pendingSavedSession = null;
 
   function updateViewportHeight() {
     const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -243,6 +301,123 @@ form {
   }
 
   const api = path => new URL(path.replace(/^\//, ""), window.location.href).toString();
+
+  function identityDirectory() {
+    return "lantern/" + chiselIdentity.replace(/[^a-zA-Z0-9_-]/g, "_");
+  }
+
+  function readIdentity() {
+    const params = new URLSearchParams(window.location.search);
+    const incoming = String(params.get("identity") || "").trim();
+    if (/^chisel:v1:[0-9a-fA-F]{66}$/.test(incoming)) {
+      chiselIdentity = incoming.toLowerCase();
+      try { localStorage.setItem(IDENTITY_STORAGE_KEY, chiselIdentity); } catch (error) {}
+      params.delete("identity");
+      const clean = window.location.pathname + (params.toString() ? "?" + params.toString() : "") + window.location.hash;
+      window.history.replaceState(null, "", clean);
+    } else {
+      try { chiselIdentity = localStorage.getItem(IDENTITY_STORAGE_KEY) || ""; } catch (error) {}
+    }
+    mySaves.hidden = !chiselIdentity;
+  }
+
+  async function fileProxyPost(path, body) {
+    const response = await fetch(FILE_PROXY_URL + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.error) throw new Error(data.error || ("HTTP " + response.status));
+    return data;
+  }
+
+  async function saveSessionToIdentity(session) {
+    if (!chiselIdentity) throw new Error("No Chisel identity is loaded.");
+    const random = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+      .map(value => value.toString(16).padStart(2, "0")).join("");
+    const filename = (session.game || "lantern") + "-" + Date.now() + "-" + random + ".lantern.json";
+    const path = identityDirectory() + "/" + filename;
+    const payload = {
+      format: "lantern-save-v1",
+      identity: chiselIdentity,
+      savedAt: new Date().toISOString(),
+      session
+    };
+    const response = await fetch(FILE_PROXY_URL + "/save?filename=" + encodeURIComponent(path), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.error) throw new Error(data.error || ("HTTP " + response.status));
+    return data;
+  }
+
+  async function loadSessionObject(saved, label) {
+    const session = saved && saved.session ? saved.session : saved;
+    const body = await request("api/session/import", {
+      method: "POST",
+      body: JSON.stringify({ session })
+    });
+    sessionId = body.session.id;
+    game.value = body.session.game;
+    document.body.classList.add("playing");
+    showResult(body.result);
+    status.textContent = "Loaded " + label + " · " + body.session.moves.length + " moves";
+    return body;
+  }
+
+  function openSaveChoice(session) {
+    pendingSavedSession = session;
+    if (chiselIdentity) {
+      saveIdentityText.textContent = "You can also keep a copy in FileProxy under your public Chisel identity.";
+      saveIdentityValue.textContent = chiselIdentity;
+      saveIdentityAction.textContent = "Save to my identity";
+    } else {
+      saveIdentityText.textContent = "Optional: create or recover a Chisel identity so Lantern saves can follow you without requiring any cryptocurrency.";
+      saveIdentityValue.textContent = "";
+      saveIdentityAction.textContent = "Create / use Chisel identity";
+    }
+    if (typeof saveDialog.showModal === "function") saveDialog.showModal();
+  }
+
+  async function refreshMySaves() {
+    if (!chiselIdentity) return;
+    mySavesIdentity.textContent = chiselIdentity;
+    mySavesList.textContent = "Loading…";
+    try {
+      const listing = await fileProxyPost("/list", { dirname: identityDirectory() });
+      const files = (listing.list || []).filter(item => item.type === "file" && /\.lantern\.json$/i.test(item.name));
+      files.sort((a, b) => b.name.localeCompare(a.name));
+      mySaves.textContent = files.length ? "My saves (" + files.length + ")" : "My saves";
+      mySavesList.textContent = "";
+      if (!files.length) {
+        mySavesList.textContent = "No FileProxy saves yet.";
+        return;
+      }
+      files.forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = item.name;
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          try {
+            const saved = await fileProxyPost("/load", { filename: identityDirectory() + "/" + item.name });
+            if (mySavesDialog.open) mySavesDialog.close();
+            await loadSessionObject(saved, item.name);
+          } catch (error) {
+            status.textContent = "Load failed: " + error.message;
+          } finally {
+            button.disabled = false;
+          }
+        });
+        mySavesList.appendChild(button);
+      });
+    } catch (error) {
+      mySavesList.textContent = "Could not load FileProxy saves: " + error.message;
+    }
+  }
 
   function setBusy(busy) {
     game.disabled = busy;
@@ -435,13 +610,42 @@ form {
       link.remove();
       URL.revokeObjectURL(url);
       status.textContent = "Game saved.";
+      closeMovePad();
+      openSaveChoice(session);
     } catch (err) {
       status.textContent = `Save failed: ${err.message}`;
-    } finally {
       closeMovePad();
-      command.focus();
     }
   });
+
+  saveDialogClose.addEventListener("click", () => saveDialog.close());
+
+  saveIdentityAction.addEventListener("click", async () => {
+    if (!pendingSavedSession) return;
+    if (!chiselIdentity) {
+      const returnUrl = new URL(window.location.href);
+      returnUrl.searchParams.delete("identity");
+      window.location.href = CHISEL_IDENTITY_URL + "?return=" + encodeURIComponent(returnUrl.toString()) + "&app=lantern";
+      return;
+    }
+    saveIdentityAction.disabled = true;
+    try {
+      await saveSessionToIdentity(pendingSavedSession);
+      status.textContent = "Saved JSON locally and to FileProxy under your Chisel identity.";
+      saveDialog.close();
+      await refreshMySaves();
+    } catch (error) {
+      saveIdentityText.textContent = "FileProxy save failed: " + error.message;
+    } finally {
+      saveIdentityAction.disabled = false;
+    }
+  });
+
+  mySaves.addEventListener("click", async () => {
+    await refreshMySaves();
+    if (typeof mySavesDialog.showModal === "function") mySavesDialog.showModal();
+  });
+  mySavesClose.addEventListener("click", () => mySavesDialog.close());
 
   function chooseLoadFile() {
     closeMovePad();
@@ -459,16 +663,7 @@ form {
     setBusy(true);
     try {
       const saved = JSON.parse(await file.text());
-      const body = await request("api/session/import", {
-        method: "POST",
-        body: JSON.stringify({ session: saved })
-      });
-
-      sessionId = body.session.id;
-      game.value = body.session.game;
-      document.body.classList.add("playing");
-      showResult(body.result);
-      status.textContent = `Loaded ${file.name} · ${body.session.moves.length} moves`;
+      await loadSessionObject(saved, file.name);
     } catch (err) {
       status.textContent = `Load failed: ${err.message}`;
       screen.textContent = `Load failed: ${err.message}`;
@@ -488,6 +683,8 @@ form {
   });
 
   newGame.addEventListener("click", startGame);
+  readIdentity();
+  if (chiselIdentity) refreshMySaves();
   health();
 })();
 </script>
