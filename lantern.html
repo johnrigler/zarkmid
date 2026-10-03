@@ -154,6 +154,7 @@ form {
       <option value="zork3">Zork III</option>
     </select>
     <button id="newGame" type="button">New game</button>
+    <button id="loadGameStart" type="button">Load game</button>
   </header>
 
   <div id="status" aria-live="polite"></div>
@@ -206,6 +207,7 @@ form {
 (() => {
   const game = document.getElementById("game");
   const newGame = document.getElementById("newGame");
+  const loadGameStart = document.getElementById("loadGameStart");
   const form = document.getElementById("commandForm");
   const command = document.getElementById("command");
   const send = document.getElementById("send");
@@ -244,6 +246,7 @@ form {
   function setBusy(busy) {
     game.disabled = busy;
     newGame.disabled = busy;
+    loadGameStart.disabled = busy;
     command.disabled = busy || !sessionId;
     send.disabled = busy || !sessionId;
   }
@@ -417,11 +420,14 @@ form {
     }
   });
 
-  loadGame.addEventListener("click", () => {
+  function chooseLoadFile() {
     closeMovePad();
     loadFile.value = "";
     loadFile.click();
-  });
+  }
+
+  loadGame.addEventListener("click", chooseLoadFile);
+  loadGameStart.addEventListener("click", chooseLoadFile);
 
   loadFile.addEventListener("change", async () => {
     const file = loadFile.files && loadFile.files[0];
