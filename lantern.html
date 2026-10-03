@@ -247,7 +247,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
 
 <script src="https://johnrigler.github.io/chisel/chisel.js?rev=20260906b"></script>
 <script src="https://johnrigler.github.io/chisel/chisel.sign.js?rev=20260906b"></script>
-<script src="https://johnrigler.github.io/chisel/chisel.identity.js?rev=20261003b"></script>
+<script src="https://johnrigler.github.io/chisel/chisel.identity.js?rev=20261003c"></script>
 <script>
 (() => {
   const game = document.getElementById("game");
@@ -310,16 +310,10 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     return "lantern/" + String(identity || "").replace(/[^a-zA-Z0-9_-]/g, "_");
   }
 
-  function shortIdentity(identity) {
-    const value = String(identity || "").trim();
-    const match = value.match(/^chisel:v1:([0-9a-fA-F]{66})$/);
-    if (!match) return value;
-    const key = match[1].toLowerCase();
-    return key.slice(0, 8) + "…" + key.slice(-8);
-  }
-
   function showIdentity(element, identity) {
-    element.textContent = shortIdentity(identity);
+    element.textContent = window.CHISEL && typeof CHISEL.shortIdentity === "function"
+      ? CHISEL.shortIdentity(identity)
+      : String(identity || "");
     element.title = identity || "";
   }
 
