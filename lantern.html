@@ -276,6 +276,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   const FILE_PROXY_URL = "https://rigler.org/fileproxy";
   const CHISEL_IDENTITY_URL = "https://johnrigler.github.io/chisel/identity.html";
   const IDENTITY_STORAGE_KEY = "lantern.chiselIdentity.v1";
+  const PENDING_IDENTITY_SAVE_KEY = "lantern.pendingIdentitySave.v1";
 
   let sessionId = null;
   let movePadOpen = false;
@@ -415,7 +416,12 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
         mySavesList.appendChild(button);
       });
     } catch (error) {
-      mySavesList.textContent = "Could not load FileProxy saves: " + error.message;
+      if (/directory not found|404/i.test(String(error.message || error))) {
+        mySaves.textContent = "My saves";
+        mySavesList.textContent = "No FileProxy saves yet.";
+      } else {
+        mySavesList.textContent = "Could not load FileProxy saves: " + error.message;
+      }
     }
   }
 
@@ -623,6 +629,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   saveIdentityAction.addEventListener("click", async () => {
     if (!pendingSavedSession) return;
     if (!chiselIdentity) {
+      try { sessionStorage.setItem(PENDING_IDENTITY_SAVE_KEY, JSON.stringify(pendingSavedSession)); } catch (error) {}
       const returnUrl = new URL(window.location.href);
       returnUrl.searchParams.delete("identity");
       window.location.href = CHISEL_IDENTITY_URL + "?return=" + encodeURIComponent(returnUrl.toString()) + "&app=lantern";
@@ -684,7 +691,17 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
 
   newGame.addEventListener("click", startGame);
   readIdentity();
-  if (chiselIdentity) refreshMySaves();
+  if (chiselIdentity) {
+    refreshMySaves();
+    try {
+      const pending = sessionStorage.getItem(PENDING_IDENTITY_SAVE_KEY);
+      if (pending) {
+        sessionStorage.removeItem(PENDING_IDENTITY_SAVE_KEY);
+        pendingSavedSession = JSON.parse(pending);
+        setTimeout(() => openSaveChoice(pendingSavedSession), 0);
+      }
+    } catch (error) {}
+  }
   health();
 })();
 </script>
