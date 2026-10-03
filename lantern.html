@@ -356,6 +356,7 @@ form {
 
   function openMovePad() {
     if (!sessionId || send.disabled) return;
+    command.blur();
     movePadOpen = true;
     movePad.classList.add("open");
     movePad.setAttribute("aria-hidden", "false");
@@ -375,6 +376,10 @@ form {
   form.addEventListener("submit", event => {
     event.preventDefault();
     submitMove(command.value);
+  });
+
+  command.addEventListener("focus", () => {
+    closeMovePad();
   });
 
   send.addEventListener("click", () => {
