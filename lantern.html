@@ -320,11 +320,11 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   function readIdentity() {
     const params = new URLSearchParams(window.location.search);
     const incoming = String(params.get("identity") || "").trim();
-    if (/^chisel:v1:[0-9a-fA-F]{66}$/.test(incoming)) {
+    const signingReturn = Boolean(params.get("signature"));
+    try { chiselIdentity = localStorage.getItem(IDENTITY_STORAGE_KEY) || ""; } catch (error) {}
+    if (!signingReturn && /^chisel:v1:[0-9a-fA-F]{66}$/.test(incoming)) {
       chiselIdentity = incoming.toLowerCase();
       try { localStorage.setItem(IDENTITY_STORAGE_KEY, chiselIdentity); } catch (error) {}
-    } else {
-      try { chiselIdentity = localStorage.getItem(IDENTITY_STORAGE_KEY) || ""; } catch (error) {}
     }
     mySaves.hidden = !chiselIdentity;
   }
