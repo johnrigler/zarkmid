@@ -307,6 +307,19 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     return "lantern/" + chiselIdentity.replace(/[^a-zA-Z0-9_-]/g, "_");
   }
 
+  function shortIdentity(identity) {
+    const value = String(identity || "").trim();
+    const match = value.match(/^chisel:v1:([0-9a-fA-F]{66})$/);
+    if (!match) return value;
+    const key = match[1].toLowerCase();
+    return key.slice(0, 8) + "…" + key.slice(-8);
+  }
+
+  function showIdentity(element, identity) {
+    element.textContent = shortIdentity(identity);
+    element.title = identity || "";
+  }
+
   function readIdentity() {
     const params = new URLSearchParams(window.location.search);
     const incoming = String(params.get("identity") || "").trim();
@@ -373,19 +386,24 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     pendingSavedSession = session;
     if (chiselIdentity) {
       saveIdentityText.textContent = "You can also keep a copy in FileProxy under your public Chisel identity.";
-      saveIdentityValue.textContent = chiselIdentity;
+      showIdentity(saveIdentityValue, chiselIdentity);
       saveIdentityAction.textContent = "Save to my identity";
+      saveIdentityAction.disabled = false;
+      saveDialogClose.textContent = "Not now";
     } else {
       saveIdentityText.textContent = "Optional: create or recover a Chisel identity so Lantern saves can follow you without requiring any cryptocurrency.";
       saveIdentityValue.textContent = "";
+      saveIdentityValue.title = "";
       saveIdentityAction.textContent = "Create / use Chisel identity";
+      saveIdentityAction.disabled = false;
+      saveDialogClose.textContent = "Not now";
     }
     if (typeof saveDialog.showModal === "function") saveDialog.showModal();
   }
 
   async function refreshMySaves() {
     if (!chiselIdentity) return;
-    mySavesIdentity.textContent = chiselIdentity;
+    showIdentity(mySavesIdentity, chiselIdentity);
     mySavesList.textContent = "Loading…";
     try {
       const listing = await fileProxyPost("/list", { dirname: identityDirectory() });
@@ -639,7 +657,11 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     try {
       await saveSessionToIdentity(pendingSavedSession);
       status.textContent = "Saved JSON locally and to FileProxy under your Chisel identity.";
-      saveDialog.close();
+      saveIdentityText.textContent = "This save is now attached to your Chisel identity.";
+      showIdentity(saveIdentityValue, chiselIdentity);
+      saveIdentityAction.textContent = "Saved";
+      saveIdentityAction.disabled = true;
+      saveDialogClose.textContent = "Close";
       await refreshMySaves();
     } catch (error) {
       saveIdentityText.textContent = "FileProxy save failed: " + error.message;
