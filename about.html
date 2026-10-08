@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>About Lantern</title>
+<style>
+body{max-width:820px;margin:40px auto;padding:0 20px;font-family:Georgia,"Times New Roman",serif;line-height:1.6;color:#171717}
+h1,h2{line-height:1.15}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:#111;color:#eee;padding:14px;overflow:auto}
+.note{border-left:4px solid #777;padding-left:12px;color:#444}
+a{color:inherit}
+</style>
+</head>
+<body>
+<h1>Lantern</h1>
+<p>Lantern is a small self-hosted interactive-fiction server built around Frotz and Z-machine game files, with experiments in portable saves, cryptographic signatures, and cryptocurrency-enabled services.</p>
+
+<h2>Where it came from</h2>
+<p>The project began as <strong>Zarkmid</strong>, a play on the fictional currency used in Infocom's Zork universe. The original experiment connected interactive-fiction state to Dogecoin transactions. The current name, Lantern, keeps the adventure-game lineage while widening the project beyond any one game or chain.</p>
+
+<p>Lantern does not bundle commercial game data as part of its core architecture. You provide your own compatible Z-machine story files. Zork is the obvious historical demonstration because Frotz was built to run Infocom-style games, but the server model is not limited to Zork.</p>
+
+<h2>The server model</h2>
+<p>Lantern is intentionally small enough to run yourself. A Python process launches and controls <code>dfrotz</code>, while the browser provides a lightweight interface for commands, transcript, save/load, and related controls.</p>
+
+<pre>your browser
+    ↓
+Lantern HTML client
+    ↓
+Python Lantern server
+    ↓
+dfrotz
+    ↓
+your Z-machine story file</pre>
+
+<p>You can run the server on a laptop, home machine, small Linux box, VPS, or another host that can run Python and Frotz. On a local network, the model is closer to the way people used to run their own Minecraft servers than to a conventional SaaS product: one person can host an instance and other people can connect to that instance.</p>
+
+<p class="note"><strong>rigler.org is only one deployment/resource endpoint.</strong> It is not required infrastructure. A fork can change the endpoint, run entirely on a LAN, or use another host.</p>
+
+<h2>Bring your own game files</h2>
+<p>Install Frotz, obtain a compatible story file that you are entitled to use, place it in the server's game directory, and point Lantern at it. Historically, Infocom games such as Zork I, II, and III have been widely available through preservation-oriented sources, but users should obtain game files from sources appropriate to their own legal situation.</p>
+
+<pre>sudo apt install frotz
+python3 lantern.py</pre>
+
+<p>The exact game directory and port are configuration details, not protocol requirements. The important idea is that the interpreter and story file remain replaceable resources.</p>
+
+<h2>Why signatures and cryptocurrency are interesting here</h2>
+<p>A self-hosted game server can do more than serve game text. It can also become a small economic and identity node.</p>
+
+<p>Lantern is exploring two additional layers:</p>
+
+<ul>
+<li><strong>Signatures:</strong> a player can sign portable messages or save-state references so identity does not depend entirely on an account created by the server operator.</li>
+<li><strong>Payments:</strong> a server can receive cryptocurrency payments for hosting, persistence, special services, shared game state, or other work without making payment itself the source of truth.</li>
+</ul>
+
+<p>This leads to a different multiplayer/service model:</p>
+
+<pre>self-hosted server
+    +
+player-held signing identity
+    +
+optional crypto payments
+    +
+portable game state
+    =
+replaceable community service</pre>
+
+<p>A server operator can charge for real work while players retain cryptographic continuity that can outlive that particular server. Another operator can run a compatible service. The endpoint is replaceable; the user's identity and signed artifacts need not be.</p>
+
+<h2>Relationship to Chisel and Mogwai</h2>
+<p>Lantern is one concrete example of the broader architecture explored in <a href="https://github.com/johnrigler/chisel">Chisel</a> and <a href="https://github.com/johnrigler/mogwai">Mogwai</a>: keep the primitives small, make services replaceable, and avoid making one hosted application the permanent owner of identity or state.</p>
+
+<p><a href="README.md">Repository README</a> · <a href="LANTERN.md">Lantern notes</a> · <a href="ATTESTATION-PROPOSAL.md">Attestation proposal</a></p>
+</body>
+</html>
