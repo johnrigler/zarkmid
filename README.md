@@ -1,23 +1,50 @@
 # Lantern
 
-[About Lantern: history, game files, self-hosting, signatures, and payments](about.html)
+**Play classic text adventures in your browser.** Lantern is a playable Z-machine game interface, beginning with Zork I, with optional self-hosting and experiments in portable saves and player-held signatures.
 
-This is a PHP wrapper for frotz games which interfaces with crypto game sharing.  Infocom games included a pretend currency known as zorkmid, so I decided to use that as the name of this project since it involves coding game saves into dogecoin transactions.  I pick dogecoin because it is quite inexpensive at this point and the save and share method is accomplished by creating weak hashes of text files and referencing them in the least significant digits of a transaction.
-<br>
-In order to use this, you will need a linux machine with python as a web server, install dfrotz and get a game module.  Dfrotz is available here:
-<br>
-https://gitlab.com/DavidGriffith/frotz
-<br>
-You can also try to install it on Ubuntu with:
-sudo apt-get install frotz
-<br>
-There is a working online example of Zork I at this site if you just want to play the game online.  It seems to even let you save and load
-by perhaps using cookies.  This project is more ambitious in that it devises an entire ecosystem of data sharing (selling) and presents zorkmid as a proof-of-concept:
-https://classicreload.com/zork-i.html
-<br>
-I found the three zork games on this site:
-<br>
-https://infocom-if.org/downloads/downloads.html
-https://infocom-if.org/downloads/zork1.zip
-https://infocom-if.org/downloads/zork2.zip
-https://infocom-if.org/downloads/zork3.zip
+<p align="center">
+  <a href="https://johnrigler.github.io/lantern/"><img src="assets/lantern-preview.svg" alt="Preview of Lantern playing Zork I in a phone-shaped terminal" width="600"></a>
+</p>
+
+<p align="center">
+  <a href="https://johnrigler.github.io/lantern/lantern.html"><strong>▶ PLAY LANTERN NOW</strong></a>
+  &nbsp; · &nbsp;
+  <a href="https://johnrigler.github.io/lantern/">Watch the animated preview</a>
+</p>
+
+The preview above shows the game interface. The [GitHub Pages homepage](https://johnrigler.github.io/lantern/) animates commands and responses, then loops. **The Play link opens the real interactive client**, which connects to the default Lantern game server at `https://rigler.org/lantern/`. Availability depends on that server being online and having the game files installed.
+
+## How it works
+
+Choose a game, enter commands such as `north`, `open mailbox`, or `inventory`, and read what happens. The browser is a thin client; a Python server runs `dfrotz` with a compatible Z-machine story file. Save and load controls are available in the interface.
+
+You can change the game server under **Settings**, including using your own server instead of `rigler.org`.
+
+```text
+Browser (GitHub Pages, IPFS, or local hosting)
+    ↓ HTTP API
+Lantern Python server
+    ↓
+dfrotz + your Z-machine story files
+```
+
+## Run your own server
+
+Lantern is not dependent on the default host. On a Linux machine, install Python and Frotz, provide compatible story files, and run the server:
+
+```sh
+sudo apt install frotz
+python3 lantern.py
+```
+
+By default the server listens on port `7788`. For a remotely hosted HTTPS client, expose the API behind an HTTPS reverse proxy. The client can then use your server URL in **Settings**.
+
+For details, see [Lantern setup and API notes](LANTERN.md), the [self-hosting section](https://johnrigler.github.io/lantern/#self-hosting), and [About Lantern](about.html).
+
+## Background and experiments
+
+Lantern began as **Zarkmid**, a project named for the fictional currency in Infocom's Zork games. Earlier experiments explored referencing game saves from Dogecoin transactions. The current implementation uses Python and Frotz, and explores user-held cryptographic identities, portable game saves, and optional payments for independently operated hosting.
+
+The game files are separate from the client and server code. Only distribute story files you have rights to use. For Frotz, see [the Frotz project](https://gitlab.com/DavidGriffith/frotz); for historical Infocom downloads, see [infocom-if.org](https://infocom-if.org/downloads/downloads.html).
+
+**Links:** [Play the game](https://johnrigler.github.io/lantern/lantern.html) · [Lantern homepage](https://johnrigler.github.io/lantern/) · [Technical notes](LANTERN.md) · [Attestation proposal](ATTESTATION-PROPOSAL.md)
