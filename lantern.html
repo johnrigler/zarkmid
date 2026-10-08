@@ -311,7 +311,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     ? "https://rigler.org/lantern/"
     : new URL(".", window.location.href).toString();
   const serverBase = new URL(requestedServer || defaultServer, window.location.href);
-  const api = path => new URL(path.replace(/^\\//, ""), serverBase).toString();
+  const api = path => new URL(path.replace(/^\//, ""), serverBase).toString();
 
   function identityDirectory(identity = chiselIdentity) {
     return "lantern/" + String(identity || "").replace(/[^a-zA-Z0-9_-]/g, "_");
