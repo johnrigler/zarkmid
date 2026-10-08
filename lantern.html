@@ -350,7 +350,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   let serverBase;
   try { serverBase = new URL(normalizedServer(requestedServer || storedServer || defaultServer)); }
   catch (error) { serverBase = new URL(defaultServer); }
-  const api = path => new URL(path.replace(/^\\//, ""), serverBase).toString();
+  const api = path => new URL(path.startsWith("/") ? path.slice(1) : path, serverBase).toString();
 
   function openSettings() {
     closeMovePad();
