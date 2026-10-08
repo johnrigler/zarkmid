@@ -1,10 +1,10 @@
-# zarkmid / Lantern
+# Lantern
 
 [About Lantern: history, game files, self-hosting, signatures, and payments](about.html)
 
-This is a PHP wrapper for frotz games which interfaces with dogecoin game sharing.  Infocom games included a pretend currency known as zorkmid, so I decided to use that as the name of this project since it involves coding game saves into dogecoin transactions.  I pick dogecoin because it is quite inexpensive at this point and the save and share method is accomplished by creating weak hashes of text files and referencing them in the least significant digits of a transaction.
+This is a PHP wrapper for frotz games which interfaces with crypto game sharing.  Infocom games included a pretend currency known as zorkmid, so I decided to use that as the name of this project since it involves coding game saves into dogecoin transactions.  I pick dogecoin because it is quite inexpensive at this point and the save and share method is accomplished by creating weak hashes of text files and referencing them in the least significant digits of a transaction.
 <br>
-In order to use this, you will need a linux machine with PHP and a web server, install dfrotz and get a game module.  Dfrotz is available here:
+In order to use this, you will need a linux machine with python as a web server, install dfrotz and get a game module.  Dfrotz is available here:
 <br>
 https://gitlab.com/DavidGriffith/frotz
 <br>
