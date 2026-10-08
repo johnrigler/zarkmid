@@ -172,6 +172,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     </select>
     <button id="newGame" type="button">New game</button>
     <button id="loadGameStart" type="button">Load game</button>
+    <button id="settingsStart" type="button">Settings</button>
     <button id="mySaves" type="button" hidden>My saves</button>
   </header>
 
@@ -212,7 +213,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     <button id="saveGame" class="action" type="button">Save game</button>
     <button id="loadGame" class="action" type="button">Load game</button>
     <button id="chooseGame" class="action" type="button">Games</button>
-    <span class="blank" aria-hidden="true"></span>
+    <button id="settingsGame" class="action" type="button">Settings</button>
     <input id="loadFile" type="file" accept="application/json,.json" hidden>
   </div>
 
@@ -245,6 +246,24 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   </div>
 </dialog>
 
+<dialog id="settingsDialog">
+  <form id="settingsForm" class="dialogBody">
+    <h2>Lantern settings</h2>
+    <label for="serverInput">Game server URL</label>
+    <input id="serverInput" type="url" required spellcheck="false" autocomplete="url"
+           placeholder="https://rigler.org/lantern/" style="width:100%">
+    <p id="settingsMessage" style="font-size:13px;color:#9aae9a" role="status">
+      The server runs Frotz and stores your active game session.
+    </p>
+    <div class="dialogActions">
+      <button type="submit">Save server</button>
+      <button id="resetServer" type="button">Default</button>
+      <button id="closeSettings" type="button">Cancel</button>
+    </div>
+    <p><a href="https://johnrigler.github.io/lantern/#self-hosting" target="_blank" rel="noopener" style="color:#a9d8ac">Set up your own Lantern server ↗</a></p>
+  </form>
+</dialog>
+
 <script src="https://johnrigler.github.io/chisel/chisel.js?rev=20260906b"></script>
 <script src="https://johnrigler.github.io/chisel/chisel.sign.js?rev=20260906b"></script>
 <script src="https://johnrigler.github.io/chisel/chisel.identity.js?rev=20261003c"></script>
@@ -253,6 +272,12 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
   const game = document.getElementById("game");
   const newGame = document.getElementById("newGame");
   const loadGameStart = document.getElementById("loadGameStart");
+  const settingsStart = document.getElementById("settingsStart");
+  const settingsGame = document.getElementById("settingsGame");
+  const settingsDialog = document.getElementById("settingsDialog");
+  const settingsForm = document.getElementById("settingsForm");
+  const serverInput = document.getElementById("serverInput");
+  const settingsMessage = document.getElementById("settingsMessage");
   const form = document.getElementById("commandForm");
   const command = document.getElementById("command");
   const send = document.getElementById("send");
@@ -306,12 +331,62 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
 
   // GitHub Pages hosts the static client; rigler.org hosts the live Frotz API.
   // Self-hosted deployments keep same-origin behavior. Override via ?server=URL.
+  const SERVER_STORAGE_KEY = "lantern.gameServer.v1";
   const requestedServer = new URLSearchParams(window.location.search).get("server");
   const defaultServer = window.location.hostname === "johnrigler.github.io"
     ? "https://rigler.org/lantern/"
     : new URL(".", window.location.href).toString();
-  const serverBase = new URL(requestedServer || defaultServer, window.location.href);
-  const api = path => new URL(path.replace(/^\//, ""), serverBase).toString();
+  function normalizedServer(value) {
+    const url = new URL(String(value).trim());
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password ||
+        url.search || url.hash) throw new Error("Enter an HTTP(S) server URL without query, fragment, or credentials.");
+    if (window.location.protocol === "https:" && url.protocol !== "https:")
+      throw new Error("An HTTPS page requires an HTTPS game server.");
+    if (!url.pathname.endsWith("/")) url.pathname += "/";
+    return url.href;
+  }
+  let storedServer = "";
+  try { storedServer = localStorage.getItem(SERVER_STORAGE_KEY) || ""; } catch (error) {}
+  let serverBase;
+  try { serverBase = new URL(normalizedServer(requestedServer || storedServer || defaultServer)); }
+  catch (error) { serverBase = new URL(defaultServer); }
+  const api = path => new URL(path.replace(/^\\//, ""), serverBase).toString();
+
+  function openSettings() {
+    closeMovePad();
+    serverInput.value = serverBase.href;
+    settingsMessage.textContent = "The server runs Frotz and stores your active game session.";
+    settingsDialog.showModal();
+  }
+  settingsStart.addEventListener("click", openSettings);
+  settingsGame.addEventListener("click", openSettings);
+  document.getElementById("closeSettings").addEventListener("click", () => settingsDialog.close());
+  document.getElementById("resetServer").addEventListener("click", () => {
+    serverInput.value = defaultServer;
+    settingsMessage.textContent = "Default restored in the field. Select Save server to apply.";
+  });
+  settingsForm.addEventListener("submit", event => {
+    event.preventDefault();
+    let next;
+    try { next = normalizedServer(serverInput.value); }
+    catch (error) { settingsMessage.textContent = error.message; return; }
+    try { localStorage.setItem(SERVER_STORAGE_KEY, next); }
+    catch (error) { settingsMessage.textContent = "Could not save settings in browser storage."; return; }
+    const changed = next !== serverBase.href;
+    serverBase = new URL(next);
+    settingsDialog.close();
+    if (changed) {
+      sessionId = null;
+      document.body.classList.remove("playing");
+      command.disabled = true;
+      send.disabled = true;
+      gameLocation.textContent = "—";
+      gameStats.textContent = "Score: — · Moves: 0";
+      screen.textContent = "Game server changed to " + serverBase.href + "\\nSelect New game to start a session on this server.";
+      status.textContent = "Server changed. Start a new game.";
+      health();
+    }
+  });
 
   function identityDirectory(identity = chiselIdentity) {
     return "lantern/" + String(identity || "").replace(/[^a-zA-Z0-9_-]/g, "_");
