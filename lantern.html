@@ -304,7 +304,14 @@ dialog::backdrop { background: rgba(0,0,0,.72); }
     });
   }
 
-  const api = path => new URL(path.replace(/^\//, ""), window.location.href).toString();
+  // GitHub Pages hosts the static client; rigler.org hosts the live Frotz API.
+  // Self-hosted deployments keep same-origin behavior. Override via ?server=URL.
+  const requestedServer = new URLSearchParams(window.location.search).get("server");
+  const defaultServer = window.location.hostname === "johnrigler.github.io"
+    ? "https://rigler.org/lantern/"
+    : new URL(".", window.location.href).toString();
+  const serverBase = new URL(requestedServer || defaultServer, window.location.href);
+  const api = path => new URL(path.replace(/^\\//, ""), serverBase).toString();
 
   function identityDirectory(identity = chiselIdentity) {
     return "lantern/" + String(identity || "").replace(/[^a-zA-Z0-9_-]/g, "_");
