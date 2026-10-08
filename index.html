@@ -112,25 +112,54 @@ footer{
   .grid{grid-template-columns:1fr}
   .lede{font-size:18px}
 }
+
+/* Homepage game demonstration */
+.hero { text-align:center; border-bottom:1px solid var(--line); padding:8px 0 42px; }
+.hero h1 { font-size:clamp(42px,7vw,76px); margin:12px 0; }
+.hero .lede { max-width:640px; margin:0 auto 26px; font-size:clamp(17px,2.5vw,21px); }
+.hero-preview { width:min(100%,390px); margin:0 auto 26px; padding:10px; border:3px solid #343b37; border-radius:32px; background:#181c1a; box-shadow:0 20px 50px #0003; }
+.preview-top { height:24px; display:flex; align-items:center; justify-content:center; color:#9ca9a0; font:12px system-ui,sans-serif; }
+.preview-screen { background:#0b0f0c; border:1px solid #39463e; border-radius:17px; height:410px; min-height:340px; display:flex; flex-direction:column; overflow:hidden; text-align:left; }
+.preview-bar { background:#172119; border-bottom:1px solid #2f4433; color:#c7e1c7; font:12px system-ui,sans-serif; padding:12px 14px; display:flex; justify-content:space-between; }
+.preview-transcript { flex:1; min-height:0; margin:0; padding:17px 16px 8px; color:#d4ffd4; white-space:pre-wrap; overflow:hidden; overflow-wrap:anywhere; font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+.preview-prompt { padding:10px 16px 14px; border-top:1px solid #29382d; color:#9ed6a4; font:14px ui-monospace,monospace; }
+.preview-prompt::after { content:"▌"; animation:blink 1s steps(1) infinite; }
+@keyframes blink { 50%{opacity:0} }
+.play-link { display:inline-block; min-width:min(100%,330px); padding:18px 24px; background:#192b20; color:white!important; border:2px solid #192b20; border-radius:12px; text-align:center; font:700 clamp(19px,3vw,23px)/1.2 system-ui,sans-serif; text-decoration:none; box-shadow:0 6px 0 #9aa99a; }
+.play-link:hover,.play-link:focus-visible { background:#304c36; outline:3px solid #a0bba4; outline-offset:3px; }
+.preview-caption { color:var(--muted); font:13px system-ui,sans-serif; margin:14px 0 0; }
+.hero .actions { margin-top:22px; font:14px system-ui,sans-serif; }
+@media(max-width:480px) { main{padding:20px 15px 50px} .preview-screen{height:365px} .hero{padding-bottom:26px} }
+@media(prefers-reduced-motion:reduce){ .preview-prompt::after { animation:none } .play-link{box-shadow:none} }
+
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <div class="eyebrow">Lantern / Zarkmid</div>
-    <h1>Host your own interactive-fiction server.</h1>
-    <p class="lede">
-      Lantern is a small self-hosted interactive-fiction system built around
-      Frotz and Z-machine story files, with experiments in portable saves,
-      signatures, and optional cryptocurrency payments.
-    </p>
+
+  <header class="hero">
+    <div class="eyebrow">Lantern · Interactive fiction</div>
+    <h1>Enter the forest.</h1>
+    <p class="lede">Play classic text adventures in your browser. Explore a world one command at a time.</p>
+    <div class="hero-preview" aria-label="Animated demonstration of Lantern gameplay">
+      <div class="preview-top">LANTERN</div>
+      <div class="preview-screen">
+        <div class="preview-bar"><span>ZORK I</span><span>Score: 0 · Moves: 0</span></div>
+        <pre id="previewTranscript" class="preview-transcript" aria-hidden="true">West of House
+You are standing in an open field west of a white house, with a boarded front door.
+There is a small mailbox here.</pre>
+        <div class="preview-prompt" aria-hidden="true">&gt; <span id="previewCommand"></span></div>
+      </div>
+    </div>
+    <a class="play-link" href="lantern.html">▶ PLAY LANTERN</a>
+    <p class="preview-caption">Looping demonstration · Open the game to play for real</p>
     <div class="actions">
-      <a href="about.html">About / history</a>
-      <a href="lantern.html">Open current interface</a>
-      <a href="https://github.com/johnrigler/lantern">Repository</a>
-      <a href="https://rigler.org/">Current rigler.org resource</a>
+      <a href="about.html">About Lantern</a>
+      <a href="https://github.com/johnrigler/lantern">GitHub repository</a>
+      <a href="LANTERN.md">Self-hosting</a>
     </div>
   </header>
+
 
   <section>
     <h2>What it is</h2>
@@ -192,86 +221,7 @@ your Z-machine story file</div>
     </div>
   </section>
 
-  <section>
-    <h2>What the game feels like</h2>
-    <p>
-      Here is a small “safe spoiler” intro showing the earliest part of a
-      classic Zork-style opening. This is just enough to show how Lantern works.
-    </p>
-
-    <div class="terminal">ZORK I: The Great Underground Empire
-
-West of House
-You are standing in an open field west of a white house, with a boarded front door.
-There is a small mailbox here.
-
-&gt; open mailbox
-Opening the small mailbox reveals a leaflet.
-
-&gt; read leaflet
-WELCOME TO ZORK.
-
-&gt; north
-North of House
-You are facing the north side of a white house. There is no door here, and all the
-windows are boarded.
-
-&gt; east
-Behind House
-You are behind the white house. A path leads into the forest to the east.
-In one corner of the house there is a small window which is slightly ajar.
-
-&gt; open window
-With great effort, you open the window far enough to allow entry.
-
-&gt; enter window
-Kitchen
-You are in the kitchen of the white house. A table seems to have been used recently
-for the preparation of food. A passage leads to the west, and a dark staircase can
-be seen leading upward. There is a trophy case here and a small window open to the west.
-
-&gt; open trophy case
-You open the trophy case.
-
-&gt; get egg
-Taken.
-
-&gt; go up
-Attic
-This is the attic. The only exit is stairs leading down.
-
-&gt; get rope
-Taken.
-
-&gt; get knife
-Taken.
-
-&gt; go down
-Kitchen
-
-&gt; west
-Living Room
-You are in the living room. There is a wooden door with strange gothic lettering to
-the west, which appears to be nailed shut. To the east a circular staircase leads
-upward. There is a trophy case here and a large oriental rug in the center of the room.
-
-&gt; open trap door
-The door reluctantly opens to reveal a rickety staircase descending into darkness.
-
-&gt; down
-Cellar
-You are in a dark and damp cellar. The air is musty. A narrow passageway leads north.
-
-&gt; north
-Troll Room
-A nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.
-
-[... eventually ...]
-&gt; put egg in case
-Done.</div>
-  </section>
-
-  <section>
+<section>
     <h2>Why this matters beyond nostalgia</h2>
     <p>
       Lantern is not just about replaying an old game. It is a testbed for a
@@ -317,5 +267,57 @@ python3 lantern.py</div>
     Lantern / Zarkmid · self-hosted interactive fiction, portable state, signatures, and optional payments
   </footer>
 </main>
+
+<script>
+(() => {
+  const output = document.getElementById("previewTranscript");
+  const prompt = document.getElementById("previewCommand");
+  if (!output || !prompt) return;
+  const opening = "West of House\nYou are standing in an open field west of a white house, with a boarded front door.\nThere is a small mailbox here.";
+  const turns = [
+    ["open mailbox", "Opening the small mailbox reveals a leaflet."],
+    ["read leaflet", "WELCOME TO ZORK!\n\nZORK is a game of adventure, danger, and low cunning."],
+    ["north", "North of House\nYou are facing the north side of a white house. There is no door here, and all the windows are boarded."],
+    ["east", "Behind House\nYou are behind the white house. A path leads into the forest to the east."],
+    ["east", "Forest Path\nThis is a path winding through a dimly lit forest."]
+  ];
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) {
+    output.textContent = opening + "\n\n> open mailbox\n" + turns[0][1] + "\n\n> north\n" + turns[2][1];
+    return;
+  }
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const visible = () => !document.hidden;
+  let generation = 0;
+  document.addEventListener("visibilitychange", () => { if (visible()) generation++; });
+  async function loop() {
+    while (true) {
+      const run = generation;
+      output.textContent = opening;
+      prompt.textContent = "";
+      await sleep(1700);
+      if (run !== generation) continue;
+      for (const [command, response] of turns) {
+        if (run !== generation) break;
+        for (const ch of command) {
+          if (run !== generation) break;
+          prompt.textContent += ch;
+          await sleep(105);
+        }
+        if (run !== generation) break;
+        await sleep(500);
+        output.textContent += "\n\n> " + command + "\n" + response;
+        // Show the latest lines just as a phone-sized terminal would.
+        output.scrollTop = output.scrollHeight;
+        prompt.textContent = "";
+        await sleep(2300);
+      }
+      if (run === generation) await sleep(2300);
+    }
+  }
+  loop();
+})();
+</script>
+
 </body>
 </html>
