@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lantern / Zarkmid</title>
+<style>
+:root{
+  --bg:#111;
+  --paper:#f5f1e8;
+  --ink:#1c1c1c;
+  --muted:#666;
+  --line:#cfc7b8;
+  --accent:#2d2d2d;
+  --term:#0b0f0c;
+  --phosphor:#d4ffd4;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:Georgia,"Times New Roman",serif;
+  line-height:1.6;
+}
+main{
+  max-width:980px;
+  margin:0 auto;
+  padding:48px 20px 72px;
+}
+header{
+  border-bottom:1px solid var(--line);
+  padding-bottom:28px;
+  margin-bottom:34px;
+}
+.eyebrow{
+  font:600 12px/1.2 system-ui,sans-serif;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+h1{
+  font-size:clamp(40px,7vw,72px);
+  line-height:.95;
+  margin:10px 0 18px;
+}
+.lede{
+  font-size:21px;
+  max-width:760px;
+}
+section{
+  margin:34px 0;
+}
+h2{
+  font-size:28px;
+  margin:0 0 12px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+.card{
+  border:1px solid var(--line);
+  background:#fffdf8;
+  padding:18px;
+}
+.actions a,
+.card a,
+.linkrow a{
+  display:inline-block;
+  margin:6px 10px 0 0;
+  color:inherit;
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+}
+.terminal{
+  background:var(--term);
+  color:var(--phosphor);
+  border-radius:8px;
+  padding:18px;
+  font:15px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  white-space:pre-wrap;
+  box-shadow:inset 0 0 0 1px #233426;
+}
+.flow{
+  background:#191919;
+  color:#f3f3f3;
+  padding:16px;
+  white-space:pre-wrap;
+  font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.note{
+  border-left:4px solid #777;
+  padding-left:12px;
+  color:#444;
+}
+ul{
+  padding-left:22px;
+}
+code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+footer{
+  margin-top:48px;
+  padding-top:20px;
+  border-top:1px solid var(--line);
+  color:var(--muted);
+  font:13px system-ui,sans-serif;
+}
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr}
+  .lede{font-size:18px}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Lantern / Zarkmid</div>
+    <h1>Host your own interactive-fiction server.</h1>
+    <p class="lede">
+      Lantern is a small self-hosted interactive-fiction system built around
+      Frotz and Z-machine story files, with experiments in portable saves,
+      signatures, and optional cryptocurrency payments.
+    </p>
+    <div class="actions">
+      <a href="about.html">About / history</a>
+      <a href="lantern.html">Open current interface</a>
+      <a href="https://github.com/johnrigler/zarkmid">Repository</a>
+      <a href="https://rigler.org/">Current rigler.org resource</a>
+    </div>
+  </header>
+
+  <section>
+    <h2>What it is</h2>
+    <p>
+      Lantern began as <strong>Zarkmid</strong>, a Zork-adjacent idea about
+      interactive fiction, persistence, and cryptocurrency. It has evolved into
+      a more general model: a browser talks to a small Python server, which
+      talks to <code>dfrotz</code>, which runs a story file you provide.
+    </p>
+
+    <div class="flow">browser
+    ↓
+Lantern HTML client
+    ↓
+Python Lantern server
+    ↓
+dfrotz
+    ↓
+your Z-machine story file</div>
+
+    <p class="note">
+      <strong>Important:</strong> <code>rigler.org</code> is one deployment,
+      not the required home of the project. You can run Lantern yourself, change
+      the endpoint, and host it on your own machine or local network.
+    </p>
+  </section>
+
+  <section>
+    <h2>How people can use it</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Run it locally</h3>
+        <p>
+          Install Python and Frotz, add your own compatible story files, and run
+          Lantern on your laptop or Linux machine.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Host it on your LAN</h3>
+        <p>
+          Think of it like the way people used to host Minecraft servers: one
+          machine runs the service, other people connect to it.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Bring your own story files</h3>
+        <p>
+          Zork is the obvious demonstration, but the architecture is broader
+          than one game. You provide the files you are entitled to use.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Add signatures and payments</h3>
+        <p>
+          Lantern is exploring player-held signing identity and optional crypto
+          payments for hosting, persistence, or shared services.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the game feels like</h2>
+    <p>
+      Here is a small “safe spoiler” intro showing the earliest part of a
+      classic Zork-style opening. This is just enough to show how Lantern works.
+    </p>
+
+    <div class="terminal">ZORK I: The Great Underground Empire
+
+West of House
+You are standing in an open field west of a white house, with a boarded front door.
+There is a small mailbox here.
+
+&gt; open mailbox
+Opening the small mailbox reveals a leaflet.
+
+&gt; read leaflet
+WELCOME TO ZORK.
+
+&gt; north
+North of House
+You are facing the north side of a white house. There is no door here, and all the
+windows are boarded.
+
+&gt; east
+Behind House
+You are behind the white house. A path leads into the forest to the east.
+In one corner of the house there is a small window which is slightly ajar.
+
+&gt; open window
+With great effort, you open the window far enough to allow entry.
+
+&gt; enter window
+Kitchen
+You are in the kitchen of the white house. A table seems to have been used recently
+for the preparation of food. A passage leads to the west, and a dark staircase can
+be seen leading upward. There is a trophy case here and a small window open to the west.
+
+&gt; open trophy case
+You open the trophy case.
+
+&gt; get egg
+Taken.
+
+&gt; go up
+Attic
+This is the attic. The only exit is stairs leading down.
+
+&gt; get rope
+Taken.
+
+&gt; get knife
+Taken.
+
+&gt; go down
+Kitchen
+
+&gt; west
+Living Room
+You are in the living room. There is a wooden door with strange gothic lettering to
+the west, which appears to be nailed shut. To the east a circular staircase leads
+upward. There is a trophy case here and a large oriental rug in the center of the room.
+
+&gt; open trap door
+The door reluctantly opens to reveal a rickety staircase descending into darkness.
+
+&gt; down
+Cellar
+You are in a dark and damp cellar. The air is musty. A narrow passageway leads north.
+
+&gt; north
+Troll Room
+A nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.
+
+[... eventually ...]
+&gt; put egg in case
+Done.</div>
+  </section>
+
+  <section>
+    <h2>Why this matters beyond nostalgia</h2>
+    <p>
+      Lantern is not just about replaying an old game. It is a testbed for a
+      broader idea:
+    </p>
+
+    <div class="flow">self-hosted service
+    +
+portable state
+    +
+player-held signatures
+    +
+optional crypto payments
+    =
+replaceable community infrastructure</div>
+
+    <p>
+      A host can run a real service. A player can keep continuity that is not
+      locked to one operator. Another host can run a compatible instance.
+    </p>
+  </section>
+
+  <section>
+    <h2>Running it yourself</h2>
+    <p>At a high level:</p>
+    <div class="terminal">sudo apt install frotz
+python3 lantern.py</div>
+
+    <p>
+      Then point the server at your own story files and open the browser
+      interface. The endpoint can be local, on a LAN, or on a VPS.
+    </p>
+
+    <div class="linkrow">
+      <a href="about.html">Read the full About page</a>
+      <a href="README.md">README</a>
+      <a href="LANTERN.md">Lantern notes</a>
+      <a href="ATTESTATION-PROPOSAL.md">Attestation proposal</a>
+    </div>
+  </section>
+
+  <footer>
+    Lantern / Zarkmid · self-hosted interactive fiction, portable state, signatures, and optional payments
+  </footer>
+</main>
+</body>
+</html>
