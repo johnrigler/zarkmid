@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 620" role="img" aria-label="Lantern game preview: Zork I terminal displaying commands and game responses">
+<rect width="860" height="620" rx="24" fill="#f5f1e8"/>
+<text x="430" y="55" fill="#1c1c1c" font-family="Georgia,serif" font-size="38" font-weight="bold" text-anchor="middle">Enter the forest.</text>
+<rect x="220" y="77" width="420" height="515" rx="34" fill="#181c1a" stroke="#343b37" stroke-width="5"/>
+<text x="430" y="104" fill="#9ca9a0" font-family="monospace" font-size="13" text-anchor="middle">LANTERN</text>
+<rect x="235" y="117" width="390" height="456" rx="15" fill="#0b0f0c" stroke="#39463e"/>
+<path d="M250 117 H610 Q625 117 625 132 V159 H235 V132 Q235 117 250 117" fill="#172119"/>
+<text x="254" y="143" fill="#c7e1c7" font-family="monospace" font-size="15">ZORK I</text>
+<text x="605" y="143" fill="#c7e1c7" font-family="monospace" font-size="12" text-anchor="end">Score: 0 · Moves: 3</text>
+<g fill="#d4ffd4" font-family="monospace" font-size="15">
+<text x="255" y="192">West of House</text>
+<text x="255" y="219">You are standing in an open field</text>
+<text x="255" y="239">west of a white house.</text>
+<text x="255" y="259">There is a small mailbox here.</text>
+<text x="255" y="300">&gt; open mailbox</text>
+<text x="255" y="327">Opening the small mailbox reveals</text>
+<text x="255" y="347">a leaflet.</text>
+<text x="255" y="390">&gt; read leaflet</text>
+<text x="255" y="417">WELCOME TO ZORK!</text>
+<text x="255" y="458">&gt; north</text>
+<text x="255" y="485">North of House</text>
+<text x="255" y="512">You are facing the north side</text>
+<text x="255" y="532">of a white house.</text>
+</g>
+<text x="255" y="558" fill="#9ed6a4" font-family="monospace" font-size="15">&gt; ▌</text>
+</svg>
