@@ -47,4 +47,6 @@ Lantern began as **Zarkmid**, a project named for the fictional currency in Info
 
 The game files are separate from the client and server code. Only distribute story files you have rights to use. For Frotz, see [the Frotz project](https://gitlab.com/DavidGriffith/frotz); for historical Infocom downloads, see [infocom-if.org](https://infocom-if.org/downloads/downloads.html).
 
+**Zorkmid:** [Read the in-world monetary white paper](ZORKMID-WHITEPAPER.md). This is a proposed currency and financing design, not a deployed token or investment offering.
+
 **Links:** [Play the game](https://johnrigler.github.io/lantern/lantern.html) · [Lantern homepage](https://johnrigler.github.io/lantern/) · [Technical notes](LANTERN.md) · [Attestation proposal](ATTESTATION-PROPOSAL.md)
