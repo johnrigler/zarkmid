@@ -10,18 +10,28 @@ MINTS = {
 }
 RPC = "https://api.mainnet-beta.solana.com"
 
-def fetch(url, data=None):
+def fetch(url, data=None, retries=3):
     body = None if data is None else json.dumps(data).encode()
-    headers = {"User-Agent":"Lantern-Solana-Research/0.1","Accept":"application/json"}
+    headers = {"User-Agent":"Lantern-Solana-Research/0.2","Accept":"application/json"}
     if body: headers["Content-Type"]="application/json"
-    for attempt in range(4):
+    for attempt in range(retries + 1):
         try:
             with urllib.request.urlopen(urllib.request.Request(url,data=body,headers=headers), timeout=30) as response:
                 return json.load(response)
-        except (OSError, ValueError) as e:
-            if attempt == 3: raise
-            print("retry:",e)
-            time.sleep(2 ** (attempt+1))
+        except urllib.error.HTTPError as e:
+            if e.code not in (429,500,502,503,504) or attempt == retries:
+                raise RuntimeError(f"{url} HTTP {e.code} after {attempt + 1} attempt(s)") from e
+            retry_after = e.headers.get("Retry-After")
+            try: wait = max(float(retry_after), 0) if retry_after else 0
+            except ValueError: wait = 0
+            wait = min(120, max(wait, 5 * (2 ** attempt)))
+            print(f"HTTP {e.code} from {url}; retry {attempt+1}/{retries} in {wait:g}s",flush=True)
+            time.sleep(wait)
+        except (OSError,ValueError) as e:
+            if attempt == retries: raise RuntimeError(f"{url}: {e}") from e
+            wait = 5 * (2 ** attempt)
+            print(f"{url}: {e}; retry in {wait}s",flush=True)
+            time.sleep(wait)
 
 def rpc(url, method, params):
     result = fetch(url, {"jsonrpc":"2.0","id":1,"method":method,"params":params})
@@ -48,6 +58,7 @@ def run(name,mint,args):
         time.sleep(args.delay)
     for label,path in [("pairs",f"/token-pairs/v1/solana/{mint}"),
                        ("orders",f"/orders/v1/solana/{mint}")]:
+        time.sleep(args.delay)
         try: snapshot["dex"][label]=fetch("https://api.dexscreener.com"+path)
         except Exception as e: snapshot["errors"].append(label+": "+str(e))
     save(root/"snapshots"/(stamp+".json"),snapshot)
@@ -91,7 +102,7 @@ def main():
     p.add_argument("--token",action="append",choices=list(MINTS),help="default: both")
     p.add_argument("--pages",type=int,default=1,help="signature pages per run, 0 to skip")
     p.add_argument("--page-size",type=int,default=100,help="up to 1000")
-    p.add_argument("--delay",type=float,default=1.0)
+    p.add_argument("--delay",type=float,default=3.0)
     p.add_argument("--restart",action="store_true",help="restart mint signature pagination")
     args=p.parse_args()
     if args.pages<0 or not 1<=args.page_size<=1000 or args.delay<0: p.error("invalid rate settings")
