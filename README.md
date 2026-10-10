@@ -28,6 +28,16 @@ Lantern Python server
 dfrotz + your Z-machine story files
 ```
 
+## The larger world behind Lantern
+
+**Lantern is a doorway, not the destination.** Zorkmid is proposed as an entry currency and a familiar tokenomics interface to a much larger world built with [Chisel](https://github.com/johnrigler/chisel). The distinguishing advantage is not a promise that game activity will drive a token price. It is years of working with public ledger data, encodings, addresses, transaction construction, self-sovereign signing, and replaceable web infrastructure. Chisel makes those capabilities available as interoperable tools, not as a proprietary platform.
+
+The possible digital social experience extends beyond a game, a token, or a single website: people can publish signed messages, record game outcomes, follow artifact histories, respond to one another, attach IPFS documents, and decide which issuers, communities, or rules they trust. Hosts and interfaces can be replaced. Many interactions need no Zorkmid at all.
+
+One proposed example is **historical token-gated participation**. A participant signs an action when their address holds the required token balance. A verifier checks ownership at a specified block or transaction state and records an independently verifiable claim or receipt. The participant might later sell every token. That does not erase the historical eligibility of the earlier action. Other people can respond to the resulting record without themselves holding tokens, depending on the community's rules. This requires explicit chain-state proofs or reproducible state queries, signed authorship, and recorded verification context; a wallet balance inspected today does not establish a historical fact by itself.
+
+This is the proposed **unfair advantage** relative to an ordinary token launch: an independently useful, extensible ecosystem is already under development, and token ownership is merely one possible input to its rules. [The Zorkmid white paper](ZORKMID-WHITEPAPER.md) describes the broader model and separates existing functionality from future integrations.
+
 ## Run your own server
 
 Lantern is not dependent on the default host. On a Linux machine, install Python and Frotz, provide compatible story files, and run the server:
