@@ -1,6 +1,6 @@
 # THE ZORKMID MONETARY CIRCULAR
 ### A note found beneath the counting-house floorboards
-*Lantern / design paper / draft 0.1 / 10 October 2026*
+*Lantern / design paper / draft 0.2 / 10 October 2026*
 
 > **READ THE NOTICE.**
 >
@@ -13,6 +13,34 @@ Zorkmid is proposed as a **fungible, transferable currency**, not a series of ra
 Lantern is the demonstration: a browser-based text adventure with replaceable hosting, portable saves, and experiments in player-controlled signing identities. Chisel supplies tools for constructing and inspecting blockchain transactions. The larger project is a Unix-like world of small, interoperable primitives: files, signatures, addresses, public ledgers, IPFS, and self-hosted services.
 
 Zorkmid would bring an existing technical practice **into tokenomics**, rather than promise that unspecified utility will someday emerge from a token sale.
+
+## I-A. The unfair advantage: beyond the token
+
+> A purse is a way into the kingdom. It is not the kingdom.
+
+Zorkmid is an **entry point into the world Chisel can build**, not the boundary of that world. A speculative token can bring attention from markets, educators, programmers, game players, and communities that might otherwise never encounter ledger-native tools. The practical advantage being proposed is deep experience with the underlying machinery: signed transactions; legible codes in values and transaction data; user-controlled identity; portable signed claims; durable public addresses as indexes; IPFS artifacts; and interchangeable user interfaces and servers.
+
+The architecture is intentionally **open-ended**. Different participants can invent rules and services without permission from a Zorkmid operator: independent games, puzzle clubs, archives, documents, attestations, social messages, portable reputation, collaborative fiction, provenance trails, and services that have nothing to do with the token's market value. Not every possibility is implemented, and no single project can credibly promise literally unlimited applications. What matters is the small composable primitives and their capacity to be reused.
+
+### A token can be a temporary key to a permanent event
+
+Consider a community that grants a participant a special action if they hold a defined quantity of Zorkmid **at the time of that action**:
+
+1. The participant controls an address and signs a specific request, preventing another person from simply claiming their identity.
+2. A verifier checks the relevant token balance or ownership state at an explicitly recorded block, slot, or transaction boundary using reliable historical chain data.
+3. The action is carried out and a signed attestation, transaction, or indexed record captures the action, the rule, and enough evidence to verify that eligibility was met.
+4. The participant subsequently sells the tokens. A historical claim about the earlier action remains true if the proof remains available and valid.
+5. Other participants may respond, publish references, dispute the interpretation, or build further actions on that record. Their own token ownership need not be required.
+
+The distinction is **ownership at an instant versus continuity of a signed social record**. The right to perform a new gated action can expire when the balance drops; already completed actions need not disappear. On a Solana-like account-based chain, reconstructing past balances requires historical account-state data, token-account ownership mapping, and a clearly defined observation point. A naive current balance lookup is insufficient. An attestation is still a claim by an identifiable issuer, not automatic proof of truth.
+
+This is more than a members-only web page. Token possession can authorize an event whose social and documentary consequences continue outside the token system, in public records that other parties can inspect and answer.
+
+### The world can outgrow Zorkmid
+
+A player can start with a game, graduate to Chisel, begin publishing signed messages or artifacts, and eventually stop interacting with Zorkmid altogether. The identity and document protocols should still work. Nothing in the technical vision requires an exclusive server, a recurring gatekeeper fee, or permanent exposure to a speculative asset.
+
+The contrast with a conventional token promotion, such as the previously discussed Purple Squirrel example, is **not** that its promoter was dishonest or that every other token has no utility. It is that this proposal starts with independently demonstrable infrastructure and uses a fungible token as a market-facing invitation into it. Technical distinctiveness does not ensure trading demand or investor profits.
 
 ## I. The currency is not the treasure
 
@@ -49,11 +77,11 @@ A rising token price can increase the cost of fixed-unit interactions. The proto
 
 ## IV. The counting house and the adventurer
 
-The project contemplates two routes to participation:
+The project contemplates three overlapping routes to participation:
 
 **Adventurer route.** The individual learns the tools, holds their own keys, obtains currency if needed, and signs or publishes transactions. This could be taught in workshops and demonstrated with Lantern and Chisel.
 
-**Financing route.** Accredited investors may want economic exposure without installing a wallet, using an exchange, or participating in gameplay. One proposal is a properly documented arrangement under which an entity acquires and safeguards defined token allocations for them, with optional delivery to self-custody or a requested sale under agreed conditions.
+**Crypto-savvy financing route.** Investors already comfortable with wallets, exchanges, and self-custody may receive tokens directly under properly defined terms, and can independently verify their balances and participate in the technical environment. Being crypto-savvy does not determine whether an offering is a security or whether a particular exemption applies.\n\n**Accredited-investor financing route.** Accredited investors may want economic exposure without installing a wallet, using an exchange, or participating in gameplay. One proposal is a properly documented arrangement under which an entity acquires and safeguards defined token allocations for them, with optional delivery to self-custody or a requested sale under agreed conditions.
 
 These routes should not be conflated. Accreditation is an eligibility concept for certain securities exemptions, **not a declaration that an investment is outside securities law**. A passive investment relying on the sponsor's promotional or development work may constitute a securities offering even if the currency has real consumptive use. Custody, investor claims, transfer rights, treasury segregation, compliance, taxes, and redemption obligations require professional design before any money is accepted.
 
