@@ -1,6 +1,6 @@
 # THE ZORKMID MONETARY CIRCULAR
 ### A note found beneath the counting-house floorboards
-*Lantern / design paper / draft 0.2 / 10 October 2026*
+*Lantern / design paper / draft 0.3 / 10 October 2026*
 
 > **READ THE NOTICE.**
 >
@@ -41,6 +41,44 @@ This is more than a members-only web page. Token possession can authorize an eve
 A player can start with a game, graduate to Chisel, begin publishing signed messages or artifacts, and eventually stop interacting with Zorkmid altogether. The identity and document protocols should still work. Nothing in the technical vision requires an exclusive server, a recurring gatekeeper fee, or permanent exposure to a speculative asset.
 
 The contrast with a conventional token promotion, such as the previously discussed Purple Squirrel example, is **not** that its promoter was dishonest or that every other token has no utility. It is that this proposal starts with independently demonstrable infrastructure and uses a fungible token as a market-facing invitation into it. Technical distinctiveness does not ensure trading demand or investor profits.
+
+## I-B. The proof is the story: bridging two audiences
+
+> If the objection is that a token does nothing, the answer is not another promise. It is a working thing that the critic can inspect.
+
+Zorkmid addresses two incomplete conversations. Traditional investors can understand a business and a market, but a proposed cryptocurrency ecosystem may look too conceptual to evaluate. Crypto traders can understand token markets, but too many token narratives fail to establish what anyone can actually do with the asset or its surrounding infrastructure. The proposed bridge is **storytelling anchored in executable, falsifiable utility**.
+
+Lantern supplies a narrative anyone can enter: play a game, make decisions, produce a reproducible session, and eventually publish or verify an independently signed record. Chisel supplies the general machinery beneath that demonstration: a transaction can transfer value while also carrying a compact code, human-readable note, discoverable address reference, or pointer to a larger IPFS artifact. An address can serve as a conventional **index into a public history**, provided independent node or explorer interfaces expose the relevant transactions and the decoder is documented.
+
+The story is not a substitute for the system. It is how a person encounters the system's capabilities in a sequence that makes sense. A game transcript, a token-gated action, a portable attestation, or a ledger-inscribed response from a critic can each become another chapter. The point is not to defeat someone rhetorically; it is to offer a reproducible counterexample to the assertion that tokens and ledgers have no utility.
+
+### A critic should be able to reproduce the claim
+
+A convincing demonstration should publish:
+1. the input action and the rules for interpreting it;
+2. a transaction ID or independently verifiable signed record;
+3. the precise transaction field, denomination, or output encoding used;
+4. an explorer-independent decoding specification and test vectors;
+5. the resulting address-indexed history or signed artifact;
+6. realistic costs, confirmation behavior, and failure cases.
+
+Anyone should be able to repeat the demonstration without trusting a promoter's website. A hostile or skeptical response can also become a signed, addressable entry in the history. **Verifiable criticism is part of the record, not evidence of a price guarantee.**
+
+### A Knuth-like engineering convention
+
+In discrete mathematics, Donald Knuth defended the convention `0^0 = 1` because it makes important combinatorial identities coherent. The analogy here is methodological rather than mathematical proof: choose a representation that makes independent operations compose cleanly, then show that it works. A convention becomes compelling through consistency, interoperability, and testability, not by declaration. The utility of a ledger index must still be measured empirically.
+
+### Network utility is not token price
+
+More messages and richer history can improve network usefulness, but they may also raise storage or indexing costs. Activity can increase fee demand without producing sustained demand to hold the native asset. Security, confirmation latency, censorship resistance, available indexes, issuance policy, and cost per durable record must be compared across chains.
+
+Bitcoin, DigiByte, Litecoin, and Dogecoin are not interchangeable on these measures. A shorter target block interval is helpful for publication latency but does not guarantee equivalent finality or security; fixed supply or halvings are not automatic proofs of long-term value. Zorkmid must specify its actual host chain and token mechanics before making comparative performance or scarcity claims.
+
+### An investor-facing story with boundaries
+
+For a traditional investor, the evidence package is a product demo, a reproducibility test, a cost model, and an adoption hypothesis. For a cryptocurrency investor, it is a technical explanation of what holding or spending the token permits and which capabilities remain useful without it. Neither audience should be asked to infer financial returns from an appealing narrative.
+
+The testable thesis is: **open, durable, address-indexed utility can attract users and independent applications; some of that use may produce demand for network services and perhaps the native asset.** The second clause is a hypothesis to measure, not a promise.
 
 ## I. The currency is not the treasure
 
