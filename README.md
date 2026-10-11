@@ -42,6 +42,10 @@ This is the proposed **unfair advantage** relative to an ordinary token launch: 
 
 The [Zorkmid monetary white paper](ZORKMID-WHITEPAPER.md#i-b-the-proof-is-the-story-bridging-two-audiences) explains the proposed bridge between conventional investors and crypto users: a story makes an unfamiliar protocol accessible, but each claimed utility must end in an independently reproducible action, signature, transaction, or indexed record. The point is to **show what the token and surrounding infrastructure can do**, not to imply that demonstration guarantees token appreciation.
 
+## The proof-of-utility demonstration
+
+[One Verifiable Story](STORY-PROOF.md) specifies an end-to-end Lantern session → canonical evidence → optional signatures → Chisel transaction reference → address-based independent verification. It distinguishes existing deterministic replay support from proposed signing and ledger integrations and provides concrete acceptance tests.
+
 ## Run your own server
 
 Lantern is not dependent on the default host. On a Linux machine, install Python and Frotz, provide compatible story files, and run the server:
