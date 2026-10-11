@@ -1,6 +1,6 @@
 # Lantern → Chisel: One Verifiable Story
 
-*Protocol demonstration specification v0.1 · 10 October 2026 · proposed, not deployed*
+*Protocol demonstration specification v0.2 · 10 October 2026 · proposed, not deployed*
 
 ## Claim
 
@@ -27,6 +27,10 @@ Independent verifier -> chain transaction -> decoder -> evidence -> hashes/signa
 ```
 
 Lantern may run via HTTP at a self-hosted endpoint; the client and exported artifact must not require a permanent Lantern-hosted web UI. Blockchain publishing is optional. No private spending key belongs on the ordinary game server.
+
+## Browser verifier implemented (V1)
+
+[story-verifier.html](story-verifier.html) accepts a Lantern session save, a restricted `lantern.story.v1` evidence object, or its `lantern.story-proof.v1` envelope; it calculates the SHA-256 of its canonicalized story data using the Web Crypto API. It checks the envelope's embedded digest and can compare a separately supplied expected digest. It exports an envelope containing only the five canonical fields and the hash. Its canonicalizer sorts object keys, supports strings, arrays and safe integers, and rejects unknown story fields. **This is a restricted JSON profile, not a complete implementation of RFC 8785.** The supported story fields are `type`, `game`, `storySha256`, `seed`, `moves`. A deterministic browser hash does not prove source authenticity, replay, independent attestation or ledger publication. Hosted page must be HTTPS or localhost for Web Crypto.
 
 ## Demonstration A: reproducible session (existing foundation)
 
