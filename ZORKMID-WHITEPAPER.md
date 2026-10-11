@@ -1,6 +1,6 @@
 # THE ZORKMID MONETARY CIRCULAR
 ### A note found beneath the counting-house floorboards
-*Lantern / design paper / draft 0.3 / 10 October 2026*
+*Lantern / design paper / draft 0.4 / 10 October 2026*
 
 > **READ THE NOTICE.**
 >
@@ -79,6 +79,8 @@ Bitcoin, DigiByte, Litecoin, and Dogecoin are not interchangeable on these measu
 For a traditional investor, the evidence package is a product demo, a reproducibility test, a cost model, and an adoption hypothesis. For a cryptocurrency investor, it is a technical explanation of what holding or spending the token permits and which capabilities remain useful without it. Neither audience should be asked to infer financial returns from an appealing narrative.
 
 The testable thesis is: **open, durable, address-indexed utility can attract users and independent applications; some of that use may produce demand for network services and perhaps the native asset.** The second clause is a hypothesis to measure, not a promise.
+
+See [One Verifiable Story](STORY-PROOF.md) for the technical architecture, publication envelope, independent verification criteria, and acceptance tests that would turn this claim into a falsifiable demonstration.
 
 ## I. The currency is not the treasure
 
