@@ -38,6 +38,10 @@ One proposed example is **historical token-gated participation**. A participant 
 
 This is the proposed **unfair advantage** relative to an ordinary token launch: an independently useful, extensible ecosystem is already under development, and token ownership is merely one possible input to its rules. [The Zorkmid white paper](ZORKMID-WHITEPAPER.md) describes the broader model and separates existing functionality from future integrations.
 
+## Why the story matters
+
+The [Zorkmid monetary white paper](ZORKMID-WHITEPAPER.md#i-b-the-proof-is-the-story-bridging-two-audiences) explains the proposed bridge between conventional investors and crypto users: a story makes an unfamiliar protocol accessible, but each claimed utility must end in an independently reproducible action, signature, transaction, or indexed record. The point is to **show what the token and surrounding infrastructure can do**, not to imply that demonstration guarantees token appreciation.
+
 ## Run your own server
 
 Lantern is not dependent on the default host. On a Linux machine, install Python and Frotz, provide compatible story files, and run the server:
