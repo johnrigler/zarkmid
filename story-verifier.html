@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lantern | Story Verifier</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{background:#101510;color:#e1e9de;font:16px/1.5 ui-monospace,monospace;margin:0;padding:18px}main{max-width:760px;margin:auto}h1{font-size:1.5rem}a{color:#a9d7a0}label{display:block;margin:16px 0 8px}input,button{color:inherit;background:#202a20;border:1px solid #718571;padding:10px;font:inherit;border-radius:5px;max-width:100%}input[type=file]{width:100%}button{cursor:pointer;margin:5px 5px 5px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#1b241b;border:1px solid #405040;padding:14px;min-height:130px}small{color:#a9b6a8}.warn{color:#ffc785}.ok{color:#a8e4a8}</style>
+</head><body><main><p><a href="lantern.html">← Lantern</a> · <a href="STORY-PROOF.md">Protocol specification</a></p>
+<h1>Independent Story Verifier <small>V1</small></h1>
+<p>Local-only browser verification. Select a Lantern save (<code>lantern.session.v1</code>), a story evidence object (<code>lantern.story.v1</code>), or a proof envelope exported here. Your file is not uploaded.</p>
+<label for="file">Evidence JSON (maximum 2 MiB)</label><input type="file" id="file" accept=".json,application/json">
+<label for="expected">Optional expected SHA-256 (64 hex characters, from an independently obtained source)</label><input id="expected" maxlength="64" spellcheck="false" autocomplete="off" placeholder="Paste expected digest">
+<div><button id="verify">Verify / Hash</button><button id="export" disabled>Export proof JSON</button></div>
+<pre id="output" aria-live="polite">Choose a file to begin.</pre>
+<p><small>A digest verifies exact evidence bytes, not that gameplay occurred. This page does not check blockchain publication, independent signatures, or replay a story file. The exported envelope is not an attestation.</small></p></main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let proof=null;
+function assert(p,m){if(!p)throw Error(m)}
+function hexDigest(bytes){return crypto.subtle.digest("SHA-256",bytes).then(buf=>Array.from(new Uint8Array(buf),b=>b.toString(16).padStart(2,"0")).join(""))}
+function canonical(value){
+ if(value===null)return "null";
+ if(typeof value==="string")return JSON.stringify(value);
+ if(typeof value==="number"){assert(Number.isSafeInteger(value),"Only safe integers are supported");return JSON.stringify(value)}
+ if(Array.isArray(value))return "["+value.map(canonical).join(",")+"]";
+ assert(value && typeof value==="object" && Object.getPrototypeOf(value)===Object.prototype,"Unsupported JSON value");
+ const keys=Object.keys(value).sort();
+ return "{"+keys.map(k=>JSON.stringify(k)+":"+canonical(value[k])).join(",")+"}";
+}
+function storyFrom(obj){
+ assert(obj && typeof obj==="object"&&!Array.isArray(obj),"Expected JSON object");
+ if(obj.type==="lantern.story-proof.v1"){
+   assert(obj.evidence && typeof obj.evidence==="object","Missing evidence");
+   return {evidence:validateStory(obj.evidence), claimed:obj.evidenceSha256, wrapped:true};
+ }
+ if(obj.type==="lantern.story.v1")return {evidence:validateStory(obj),claimed:null,wrapped:false};
+ assert(obj.version==="lantern.session.v1","Expected Lantern session v1, story v1 or proof envelope v1");
+ return {evidence:validateStory({type:"lantern.story.v1",game:obj.game,storySha256:obj.storySha256,seed:obj.seed,moves:obj.moves}),claimed:null,wrapped:false};
+}
+function validateStory(s){
+ assert(s.type==="lantern.story.v1","Unsupported story type");
+ assert(typeof s.game==="string" && /^[a-z0-9_-]{1,48}$/.test(s.game),"Invalid game");
+ assert(typeof s.storySha256==="string" && /^[a-f0-9]{64}$/.test(s.storySha256),"Invalid story SHA-256");
+ assert(Number.isSafeInteger(s.seed),"Invalid integer seed");
+ assert(Array.isArray(s.moves) && s.moves.length<=5000 && s.moves.every(m=>typeof m==="string" && m.length>0 && m.length<=200),"Invalid moves");
+ const allowed=["type","game","storySha256","seed","moves"];
+ assert(Object.keys(s).every(k=>allowed.includes(k)),"Unsupported story fields for v1");
+ return {type:s.type,game:s.game,storySha256:s.storySha256,seed:s.seed,moves:s.moves};
+}
+function downloadJSON(data,name){
+ const blob=new Blob([JSON.stringify(data,null,2)+"\n"],{type:"application/json"});
+ const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+$("verify").addEventListener("click",async()=>{
+ proof=null;$("export").disabled=true;
+ try{
+  assert(window.crypto?.subtle,"Web Crypto unavailable; serve over HTTPS or localhost");
+  const f=$("file").files[0];assert(f,"Select a JSON file");assert(f.size<=2097152,"File exceeds 2 MiB");
+  const parsed=JSON.parse(await f.text());const {evidence,claimed,wrapped}=storyFrom(parsed);
+  const bytes=new TextEncoder().encode(canonical(evidence));
+  const digest=await hexDigest(bytes);
+  const expected=$("expected").value.trim().toLowerCase();
+  assert(!expected || /^[a-f0-9]{64}$/.test(expected),"Expected digest must be 64 hex characters");
+  assert(claimed==null || /^[a-f0-9]{64}$/.test(claimed),"Proof contains invalid claimed digest");
+  const matchesClaim=claimed==null?null:claimed===digest;
+  const matchesExpected=!expected?null:expected===digest;
+  proof={type:"lantern.story-proof.v1",evidence,evidenceSha256:digest};
+  $("export").disabled=false;
+  $("output").textContent=[
+   "Canonical story SHA-256: "+digest,
+   "Game: "+evidence.game+" | Seed: "+evidence.seed+" | Moves: "+evidence.moves.length,
+   "Story file SHA-256 (claimed in evidence): "+evidence.storySha256,
+   "Input: "+(wrapped?"proof envelope":parsed.version==="lantern.session.v1"?"Lantern session":"story evidence"),
+   "Envelope digest match: "+(matchesClaim===null?"not supplied":matchesClaim?"PASS":"FAIL"),
+   "External expected digest: "+(matchesExpected===null?"not supplied":matchesExpected?"PASS":"FAIL"),
+   "JSON schema: PASS",
+   "",
+   "NOT VERIFIED: actual story bytes, game replay, author identity, issuer signature, chain publication, or on-chain ordering.",
+   "Note: A digest inside the same editable file is not independent authenticity evidence."
+  ].join("\n");
+  if(matchesClaim===false||matchesExpected===false)$("output").textContent+="\nWARNING: DIGEST MISMATCH.";
+ }catch(e){$("output").textContent="Verification failed: "+e.message}
+});
+$("export").addEventListener("click",()=>{if(proof)downloadJSON(proof,"lantern-story-proof-"+proof.evidenceSha256.slice(0,12)+".json")});
+</script></body></html>
